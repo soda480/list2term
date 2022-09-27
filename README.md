@@ -1,6 +1,6 @@
 # list2term
-[![build](https://github.com/soda480/list2term/actions/workflows/main.yml/badge.svg)](https://github.com/soda480/list2term/actions/workflows/main.yml)
-[![Code Grade](https://api.codiga.io/project/33832/status/svg)](https://app.codiga.io/public/project/33832/mppbar/dashboard)
+[![build](https://github.com/soda480/list2term/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/soda480/list2term/actions/workflows/main.yml)
+[![Code Grade](https://api.codiga.io/project/34678/status/svg)](https://app.codiga.io/hub/project/34678/list2term)
 [![codecov](https://codecov.io/gh/soda480/list2term/branch/main/graph/badge.svg?token=IYQBFG9J8G)](https://codecov.io/gh/soda480/list2term)
 [![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
 [![PyPI version](https://badge.fury.io/py/list2term.svg)](https://badge.fury.io/py/list2term)

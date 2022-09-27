@@ -13,7 +13,7 @@ use_plugin('pypi:pybuilder_anybadge')
 
 name = 'list2term'
 authors = [Author('Emilio Reyes', 'soda480@gmail.com')]
-summary = 'Dynamically display a list to the terminal; provides a convenient way to display messages from concurrent asyncio or multiprocessing Pool processes.'
+summary = 'Dynamically display a list to the terminal and provides a convenient way to display messages from concurrent asyncio or multiprocessing Pool processes.'
 url = 'https://github.com/soda480/list2term'
 version = '0.1.0'
 default_task = [
