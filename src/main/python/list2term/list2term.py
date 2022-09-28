@@ -130,10 +130,11 @@ class Lines(UserList):
         """
         if (sys.stderr.isatty() or force) and self._show_x_axis:
             x_axis = ''.join([str(round(i / 10))[-1] if i % 10 == 0 else '.' for i in range(self._max_chars)])
+            spaces = ' ' * 4 if self._show_index else ''
             if self._use_color:
-                print(f"    {BRIGHT_YELLOW}{x_axis}{Style.RESET_ALL}", file=sys.stderr)
+                print(f"{spaces}{BRIGHT_YELLOW}{x_axis}{Style.RESET_ALL}", file=sys.stderr)
             else:
-                print(f"    {x_axis}", file=sys.stderr)
+                print(f"{spaces}{x_axis}", file=sys.stderr)
 
     def print_lines(self, force=False, from_index=None):
         """ print all items
