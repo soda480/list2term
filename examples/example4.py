@@ -1,13 +1,7 @@
 import time
-from multiprocessing import Pool
-from multiprocessing import get_context
-from multiprocessing import cpu_count
-from queue import Empty
-from list2term.multiprocessing import LinesQueue
-from list2term.multiprocessing import QueueManager
-from list2term import Lines
+from list2term.multiprocessing import lines
+from list2term.multiprocessing import CONCURRENCY
 
-CONCURRENCY = cpu_count()
 
 def is_prime(num):
     if num == 1:
@@ -31,20 +25,8 @@ def count_primes(start, stop, logger):
 
 def main(number):
     step = int(number / CONCURRENCY)
-    QueueManager.register('LinesQueue', LinesQueue)
-    with QueueManager() as manager:
-        queue = manager.LinesQueue(ctx=get_context())
-        with Pool(CONCURRENCY) as pool:
-            process_data = [(index, index + step, queue) for index in range(0, number, step)]
-            results = pool.starmap_async(count_primes, process_data)
-            lookup = [f'{data[0]}:{data[1]}' for data in process_data]
-            with Lines(lookup=lookup, use_color=True) as lines:
-                while True:
-                    try:
-                        lines.write(queue.get(timeout=.1))
-                    except Empty:
-                        if results.ready():
-                            break
+    iterable = [(index, index + step) for index in range(0, number, step)]
+    results = lines(count_primes, iterable, use_color=True, show_index=True, show_x_axis=False)
     return sum(results.get())
 
 if __name__ == '__main__':
