@@ -15,7 +15,7 @@ name = 'list2term'
 authors = [Author('Emilio Reyes', 'soda480@gmail.com')]
 summary = 'Provides a convenient way to mirror a list to the terminal and helper methods to display messages from concurrent asyncio or multiprocessing Pool processes.'
 url = 'https://github.com/soda480/list2term'
-version = '0.1.1'
+version = '0.1.2'
 default_task = [
     'clean',
     'analyze',

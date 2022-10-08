@@ -1,5 +1,6 @@
 import time
-from list2term.multiprocessing import lines
+from list2term import Lines
+from list2term.multiprocessing import pool_with_queue
 from list2term.multiprocessing import CONCURRENCY
 
 
@@ -26,7 +27,9 @@ def count_primes(start, stop, logger):
 def main(number):
     step = int(number / CONCURRENCY)
     iterable = [(index, index + step) for index in range(0, number, step)]
-    results = lines(count_primes, iterable, use_color=True, show_index=True, show_x_axis=False)
+    lookup = [':'.join(map(str, item)) for item in iterable]
+    lines = Lines(lookup=lookup, use_color=True, show_index=True, show_x_axis=False)
+    results = pool_with_queue(count_primes, iterable, lines)
     return sum(results.get())
 
 if __name__ == '__main__':
