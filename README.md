@@ -137,17 +137,18 @@ if __name__ == '__main__':
 
 #### [example4 - display messages from multiprocessing Pool processes](https://github.com/soda480/list2term/blob/main/examples/example4.py)
 
-This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). The `list2term.multiprocessing` module contains a `lines` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute along with an iterable of arguments to pass each process invocation. The method will execute the functions asynchronously and return a multiprocessing.pool.AsyncResult object. Additional key word arguments can be passed to the `lines` method to control `Lines`.  Each line in the terminal represents a background worker process.
+This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). The `list2term.multiprocessing` module contains a `pool_with_queue` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute, an iterable of arguments to pass each process, and an instance of `Lines`. The method will execute the functions asynchronously, update the terminal lines accordingly and return a multiprocessing.pool.AsyncResult object. Each line in the terminal represents a background worker process.
 
-If you do not wish to use the abstraction, the `list2term.multiprocessing` module contains helper classes that define a `LinesQueue` as well as a `QueueManager` to facilitate communication between worker processes and the main process. Refer to [example5](https://github.com/soda480/list2term/blob/main/examples/example5.py) for how the helper methods can be used. 
+If you do not wish to use the abstraction, the `list2term.multiprocessing` module contains helper classes that facilitates communication between the worker processes and the main process; the `QueueManager` provide a way to create a `LinesQueue` queue which can be shared between different processes. Refer to [example5](https://github.com/soda480/list2term/blob/main/examples/example5.py) for how the helper methods can be used. 
 
-**Note** the function being executed must accept a `logger` object that is used to write messages, this is the mechanism for how messages are sent from the worker processes to the main process, it is the main process that is displaying the messages to the terminal. The messages must be written using the format `{identifier}->{message}`, where (by default) {identifier} is a colon delimited string consisting of the function arguments, it uniquely identifies a process to the Lines instance. You may choose to define your own identifer so long as you provide it via the `lookup` argument to the `Lines` class or `lines` method.
+**Note** the function being executed must accept a `LinesQueue` object that is used to write messages via its `write` method, this is the mechanism for how messages are sent from the worker processes to the main process, it is the main process that is displaying the messages to the terminal. The messages must be written using the format `{identifier}->{message}`, where {identifier} is a string that uniquely identifies a process, defined via the lookup argument to `Lines`.
 
 <details><summary>Code</summary>
 
 ```Python
 import time
-from list2term.multiprocessing import lines
+from list2term import Lines
+from list2term.multiprocessing import pool_with_queue
 from list2term.multiprocessing import CONCURRENCY
 
 def is_prime(num):
@@ -173,7 +174,9 @@ def count_primes(start, stop, logger):
 def main(number):
     step = int(number / CONCURRENCY)
     iterable = [(index, index + step) for index in range(0, number, step)]
-    results = lines(count_primes, iterable, use_color=True, show_index=True, show_x_axis=False)
+    lookup = [':'.join(map(str, item)) for item in iterable]
+    lines = Lines(lookup=lookup, use_color=True, show_index=True, show_x_axis=False)
+    results = pool_with_queue(count_primes, iterable, lines)
     return sum(results.get())
 
 if __name__ == '__main__':

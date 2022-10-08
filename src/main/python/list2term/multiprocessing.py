@@ -17,11 +17,13 @@ class LinesQueue(Queue):  # pragma: no cover
 
 
 class QueueManager(BaseManager):  # pragma: no cover
+    # Managers provide a way to create data which can be shared between different processes
     pass
 
 
-def lines(function, iterable, lookup=None, **kwargs):  # pragma: no cover
-    """ multiprocessing enabled helper function to display messages from Pool of processes to terminal
+def pool_with_queue(function, iterable, context_manager):  # pragma: no cover
+    """ multiprocessing helper function to write messages from Pool of processes to terminal
+        context_manager is a subclass of list2term.Lines
         returns multiprocessing.pool.AsyncResult
     """
     QueueManager.register('LinesQueue', LinesQueue)
@@ -33,15 +35,11 @@ def lines(function, iterable, lookup=None, **kwargs):  # pragma: no cover
             process_data = [item + (lines_queue,) for item in iterable]
             # start process pool asynchronously
             results = pool.starmap_async(function, process_data)
-            if not lookup:
-                # create lookup list consisting of colon-delimeted string of iterable arguments
-                lookup = [':'.join(map(str, item)) for item in iterable]
-            # display messages from pool processes to the terminal using Lines
-            # read message from lines queue and write it to the respective line on the terminal
-            with Lines(lookup=lookup, **kwargs) as terminal_lines:
+            # write messages from pool processes to the terminal using context_manager
+            with context_manager as lines:
                 while True:
                     try:
-                        terminal_lines.write(lines_queue.get(timeout=.1))
+                        lines.write(lines_queue.get(timeout=.1))
                     except Empty:
                         if results.ready():
                             break
