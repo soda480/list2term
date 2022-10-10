@@ -1,6 +1,6 @@
 import time
 from list2term import Lines
-from list2term.multiprocessing import pool_with_queue
+from list2term.multiprocessing import pool_map
 from list2term.multiprocessing import CONCURRENCY
 
 
@@ -29,7 +29,7 @@ def main(number):
     iterable = [(index, index + step) for index in range(0, number, step)]
     lookup = [':'.join(map(str, item)) for item in iterable]
     lines = Lines(lookup=lookup, use_color=True, show_index=True, show_x_axis=False)
-    results = pool_with_queue(count_primes, iterable, lines)
+    results = pool_map(count_primes, iterable, lines)
     return sum(results.get())
 
 if __name__ == '__main__':
