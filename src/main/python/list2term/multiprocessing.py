@@ -21,7 +21,7 @@ class QueueManager(BaseManager):  # pragma: no cover
     pass
 
 
-def pool_with_queue(function, iterable, context_manager):  # pragma: no cover
+def pool_map(function, iterable, context_manager):  # pragma: no cover
     """ multiprocessing helper function to write messages from Pool of processes to terminal
         context_manager is a subclass of list2term.Lines
         returns multiprocessing.pool.AsyncResult

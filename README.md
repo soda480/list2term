@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
 #### [example4 - display messages from multiprocessing Pool processes](https://github.com/soda480/list2term/blob/main/examples/example4.py)
 
-This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). The `list2term.multiprocessing` module contains a `pool_with_queue` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute, an iterable of arguments to pass each process, and an instance of `Lines`. The method will execute the functions asynchronously, update the terminal lines accordingly and return a multiprocessing.pool.AsyncResult object. Each line in the terminal represents a background worker process.
+This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). The `list2term.multiprocessing` module contains a `pool_map` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute, an iterable of arguments to pass each process, and an instance of `Lines`. The method will execute the functions asynchronously, update the terminal lines accordingly and return a multiprocessing.pool.AsyncResult object. Each line in the terminal represents a background worker process.
 
 If you do not wish to use the abstraction, the `list2term.multiprocessing` module contains helper classes that facilitates communication between the worker processes and the main process; the `QueueManager` provide a way to create a `LinesQueue` queue which can be shared between different processes. Refer to [example5](https://github.com/soda480/list2term/blob/main/examples/example5.py) for how the helper methods can be used. 
 
@@ -148,7 +148,7 @@ If you do not wish to use the abstraction, the `list2term.multiprocessing` modul
 ```Python
 import time
 from list2term import Lines
-from list2term.multiprocessing import pool_with_queue
+from list2term.multiprocessing import pool_map
 from list2term.multiprocessing import CONCURRENCY
 
 def is_prime(num):
@@ -176,7 +176,7 @@ def main(number):
     iterable = [(index, index + step) for index in range(0, number, step)]
     lookup = [':'.join(map(str, item)) for item in iterable]
     lines = Lines(lookup=lookup, use_color=True, show_index=True, show_x_axis=False)
-    results = pool_with_queue(count_primes, iterable, lines)
+    results = pool_map(count_primes, iterable, lines)
     return sum(results.get())
 
 if __name__ == '__main__':
