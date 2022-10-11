@@ -5,6 +5,7 @@ from multiprocessing import cpu_count
 from multiprocessing.queues import Queue
 from multiprocessing.managers import BaseManager
 from queue import Empty
+from contextlib import nullcontext
 from list2term import Lines
 
 logger = logging.getLogger(__name__)
@@ -21,9 +22,9 @@ class QueueManager(BaseManager):  # pragma: no cover
     pass
 
 
-def pool_map(function, iterable, context_manager):  # pragma: no cover
+def pool_map(function, iterable, context=None, print_status=True):  # pragma: no cover
     """ multiprocessing helper function to write messages from Pool of processes to terminal
-        context_manager is a subclass of list2term.Lines
+        context is a subclass of list2term.Lines
         returns multiprocessing.pool.AsyncResult
     """
     QueueManager.register('LinesQueue', LinesQueue)
@@ -35,11 +36,17 @@ def pool_map(function, iterable, context_manager):  # pragma: no cover
             process_data = [item + (lines_queue,) for item in iterable]
             # start process pool asynchronously
             results = pool.starmap_async(function, process_data)
-            # write messages from pool processes to the terminal using context_manager
-            with context_manager as lines:
+            if not context:
+                context = nullcontext()
+            with context as lines:
                 while True:
                     try:
-                        lines.write(lines_queue.get(timeout=.1))
+                        item = lines_queue.get(timeout=.1)
+                        if lines:
+                            lines.write(item)
+                        else:
+                            if print_status:
+                                print(item)
                     except Empty:
                         if results.ready():
                             break
