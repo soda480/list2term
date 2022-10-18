@@ -22,15 +22,19 @@ class QueueManager(BaseManager):  # pragma: no cover
     pass
 
 
-def pool_map(function, iterable, context=None, print_status=True):  # pragma: no cover
+def pool_map(function, iterable, context=None, print_status=True, processes=None):  # pragma: no cover
     """ multiprocessing helper function to write messages from Pool of processes to terminal
         context is a subclass of list2term.Lines
         returns multiprocessing.pool.AsyncResult
     """
+    if not processes:
+        processes = CONCURRENCY
+    if not (0 < processes <= CONCURRENCY):
+        raise ValueError(f'processes must be greater than 0 and less than equal to available cores {CONCURRENCY}')
     QueueManager.register('LinesQueue', LinesQueue)
     with QueueManager() as manager:
         lines_queue = manager.LinesQueue(ctx=get_context())
-        with Pool(CONCURRENCY) as pool:
+        with Pool(processes) as pool:
             # add lines_queue to each process arguments list
             # the function should write status messages to the queue
             process_data = [item + (lines_queue,) for item in iterable]

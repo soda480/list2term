@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
 This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). The `list2term.multiprocessing` module contains a `pool_map` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute, an iterable of arguments to pass each process, and an optional instance of `Lines`. The method will execute the functions asynchronously, update the terminal lines accordingly and return a multiprocessing.pool.AsyncResult object. Each line in the terminal represents a background worker process.
 
-If you do not wish to use the abstraction, the `list2term.multiprocessing` module contains helper classes that facilitates communication between the worker processes and the main process; the `QueueManager` provide a way to create a `LinesQueue` queue which can be shared between different processes. Refer to [example5](https://github.com/soda480/list2term/blob/main/examples/example5.py) for how the helper methods can be used. 
+If you do not wish to use the abstraction, the `list2term.multiprocessing` module contains helper classes that facilitates communication between the worker processes and the main process; the `QueueManager` provide a way to create a `LinesQueue` queue which can be shared between different processes. Refer to [example4b](https://github.com/soda480/list2term/blob/main/examples/example4b.py) for how the helper methods can be used.
 
 **Note** the function being executed must accept a `LinesQueue` object that is used to write messages via its `write` method, this is the mechanism for how messages are sent from the worker processes to the main process, it is the main process that is displaying the messages to the terminal. The messages must be written using the format `{identifier}->{message}`, where {identifier} is a string that uniquely identifies a process, defined via the lookup argument to `Lines`.
 
@@ -174,11 +174,12 @@ def count_primes(start, stop, logger):
 
 def main(number):
     step = int(number / CONCURRENCY)
+    print(f"Distributing {int(number / step)} ranges across {CONCURRENCY} workers running concurrently")
     iterable = [(index, index + step) for index in range(0, number, step)]
     lookup = [':'.join(map(str, item)) for item in iterable]
     lines = Lines(lookup=lookup, use_color=True, show_index=True, show_x_axis=False)
     # print to screen with lines context
-    results = pool_map(count_primes, iterable, context=lines)
+    results = pool_map(count_primes, iterable, context=lines, processes=None)
     # print to screen without lines context
     # results = pool_map(count_primes, iterable)
     # do not print to screen

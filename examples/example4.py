@@ -26,11 +26,12 @@ def count_primes(start, stop, logger):
 
 def main(number):
     step = int(number / CONCURRENCY)
+    print(f"Distributing {int(number / step)} ranges across {CONCURRENCY} workers running concurrently")
     iterable = [(index, index + step) for index in range(0, number, step)]
     lookup = [':'.join(map(str, item)) for item in iterable]
     lines = Lines(lookup=lookup, use_color=True, show_index=True, show_x_axis=False)
     # print to screen with lines context
-    results = pool_map(count_primes, iterable, context=lines)
+    results = pool_map(count_primes, iterable, context=lines, processes=None)
     # print to screen without lines context
     # results = pool_map(count_primes, iterable)
     # do not print to screen
