@@ -22,6 +22,9 @@ class Lines(UserList):
         """ constructor
         """
         logger.debug('executing Lines constructor')
+        if not sys.stderr.isatty():
+            print('not attached to tty device: lines printed on context manager exit only', file=sys.stderr)
+            sys.stderr.flush()
         data = Lines._get_data(data, size, lookup)
         Lines._validate_lookup(lookup, data)
         Lines._validate_data(data)
@@ -40,7 +43,7 @@ class Lines(UserList):
         """
         self.hide_cursor()
         self.print_x_axis(force=True)
-        self.print_lines(force=True)
+        self.print_lines(force=False)
         return self
 
     def __exit__(self, *args):
