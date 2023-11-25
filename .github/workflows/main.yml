@@ -27,7 +27,7 @@ jobs:
           docker save --output images/list2term-${{ matrix.version }}.tar list2term:${{ matrix.version }}
       - name: upload list2term ${{ matrix.version }} image artifact
         if: ${{ matrix.version == '3.9' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: image
           path: images/list2term-${{ matrix.version }}.tar
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: download image artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: image
           path: images/
