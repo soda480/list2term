@@ -15,7 +15,7 @@ name = 'list2term'
 authors = [Author('Emilio Reyes', 'soda480@gmail.com')]
 summary = 'Provides a convenient way to mirror a list to the terminal and helper methods to display messages from concurrent asyncio or multiprocessing Pool processes.'
 url = 'https://github.com/soda480/list2term'
-version = '0.1.5'
+version = '0.1.6'
 default_task = [
     'clean',
     'analyze',
@@ -45,10 +45,11 @@ def set_properties(project):
     project.set_property('distutils_classifiers', [
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10'])
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12'])
     project.set_property('radon_break_build_average_complexity_threshold', 4)
     project.set_property('radon_break_build_complexity_threshold', 10)
     project.set_property('bandit_break_build', True)
