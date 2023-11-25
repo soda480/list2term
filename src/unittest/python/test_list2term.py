@@ -253,7 +253,7 @@ class TestLines(unittest.TestCase):
         lines = Lines(size=3)
         text = 'hello' * 40
         result = lines._sanitize(text)
-        expected_result = f'{text[0:MAX_CHARS  - 3]}...'
+        expected_result = f'{text[0:MAX_CHARS - 3]}...'
         self.assertEqual(result, expected_result)
 
     @patch('list2term.Lines._validate_data')
