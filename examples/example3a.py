@@ -2,6 +2,7 @@ import asyncio
 import random
 from faker import Faker
 from list2term import Lines
+from mock import patch
 
 async def do_work(worker, lines):
     total = random.randint(10, 65)
@@ -22,4 +23,5 @@ def main():
     print(f'The {workers} workers processed a total of {sum(results)} items')
 
 if __name__ == '__main__':
-    main()
+    with patch('sys.stderr.isatty', return_value=False):
+        main()
