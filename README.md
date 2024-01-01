@@ -12,7 +12,7 @@ The `list2term` module provides a convenient way to mirror a list to the termina
 pip install list2term
 ```
 
-### `Lines`
+## `Lines`
 
 ```
 Lines(
@@ -29,7 +29,7 @@ Lines(
 
 **Parameters**
 
-> `data` - A list of items.
+> `data` - A list of items to mirror to the terminal.
 
 > `size` - An integer designating the size of the initial list - each list item will be initialized to empty string. This parameter should not be used if providing a list of items using the `data` parameter. 
 
@@ -45,7 +45,7 @@ Lines(
 
 **Attributes**
 
-> `data` - A real list object used to store the contents of the `Lines` class.
+> `data` - A real list object containing the contents of the `Lines` class.
 
 **Functions**
 
@@ -54,9 +54,7 @@ Lines(
 
 </details>
 
-## Examples
-
-### [example1 - display list of static size](https://github.com/soda480/list2term/blob/main/examples/example1.py)
+### Display list [example1](https://github.com/soda480/list2term/blob/main/examples/example1.py)
 
 Start with a list of 15 items containing random sentences, then update sentences at random indexes. As items in the list are updated the respective line in the terminal is updated to show the current contents of the list.
 
@@ -85,7 +83,7 @@ if __name__ == '__main__':
 
 ![example1](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example1.gif)
 
-### [example2 - display list of dynamic size](https://github.com/soda480/list2term/blob/main/examples/example2.py)
+### Display list of dynamic size [example2](https://github.com/soda480/list2term/blob/main/examples/example2.py)
 
 Start with a list of 10 items containing random sentences, then add sentences to the list, update existing sentences or remove items from the list at random indexes. As items in the list are added, updated, and removed the respective line in the terminal is updated to show the current contents of the list.
 
@@ -135,9 +133,9 @@ if __name__ == '__main__':
 
 ![example2](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example2.gif)
 
-### [example3 - display messages from asyncio processes](https://github.com/soda480/pypbars/blob/main/examples/example3.py)
+### Display messages from `asyncio` processes [example3](https://github.com/soda480/pypbars/blob/main/examples/example3.py)
 
-This example demonstrates how `list2term` can be used to display messages from asyncio processes to the terminal. Each line in the terminal represents a asnycio process.
+This example demonstrates how `list2term` can be used to display messages from asyncio processes to the terminal. Each item of the list represents a asnycio process.
 
 <details><summary>Code</summary>
 
@@ -174,9 +172,9 @@ if __name__ == '__main__':
 ![example3](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example3.gif)
 
 
-### [example4 - display messages from multiprocessing Pool processes](https://github.com/soda480/list2term/blob/main/examples/example4.py)
+### Display messages from multiprocessing pool processes [example4](https://github.com/soda480/list2term/blob/main/examples/example4.py)
 
-This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). The `list2term.multiprocessing` module contains a `pool_map` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute, an iterable of arguments to pass each process, and an optional instance of `Lines`. The method will execute the functions asynchronously, update the terminal lines accordingly and return a multiprocessing.pool.AsyncResult object. Each line in the terminal represents a background worker process.
+This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). Each item of the list represents a background process. The `list2term.multiprocessing` module contains a `pool_map` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute, an iterable of arguments to pass each process, and an optional instance of `Lines`. The method will execute the functions asynchronously, update the terminal lines accordingly and return a multiprocessing.pool.AsyncResult object. Each line in the terminal represents a background worker process.
 
 If you do not wish to use the abstraction, the `list2term.multiprocessing` module contains helper classes that facilitates communication between the worker processes and the main process; the `QueueManager` provide a way to create a `LinesQueue` queue which can be shared between different processes. Refer to [example4b](https://github.com/soda480/list2term/blob/main/examples/example4b.py) for how the helper methods can be used.
 
