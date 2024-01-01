@@ -55,36 +55,33 @@ class Lines(UserList):
     def __setitem__(self, index, item):
         """ set item override
         """
-        super().__setitem__(index, item)
+        self.data[index] = item
         self.print_line(index)
 
     def __delitem__(self, index):
         """ delete item override
         """
-        original_len = len(self.data)
-        super().__delitem__(index)
+        length = len(self.data)
+        del self.data[index]
         if isinstance(index, int):
             # clear last line
-            self._clear_line(original_len - 1)
+            self._clear_line(length - 1)
             start = index if index > 0 else None
             self.print_lines(start)
         else:
-            # for number in range(index.stop, original_len):
-            #    self._clear_line(number)
-            # self.print_lines(index.start)
             raise NotImplementedError('deleting slices is not supported')
 
     def append(self, item):
         """ append override
         """
-        # need to add some validation here
-        super().append(item)
+        # need to add validation here
+        self.data.append(item)
         self.print_lines()
 
     def pop(self, index=-1):
         """ pop override
         """
-        super().pop(index)
+        self.data.pop(index)
         # clear supposed last line in terminal
         self._clear_line(len(self.data))
         start = index if index > 0 else None
@@ -98,10 +95,10 @@ class Lines(UserList):
     def clear(self):
         """ clear override
         """
-        original_len = len(self.data)
+        length = len(self.data)
         self.data.clear()
-        for number in range(0, original_len):
-            self._clear_line(number)
+        for index in range(0, length):
+            self._clear_line(index)
 
     def _clear_line(self, index):
         """ clear line at index

@@ -4,5 +4,5 @@ ENV PYTHONDONTWRITEBYTECODE 1
 WORKDIR /code
 COPY . /code/
 RUN pip install --upgrade pip && \
-    pip install pybuilder faker
+    pip install pybuilder faker mock
 RUN pyb -X
