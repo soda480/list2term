@@ -5,16 +5,60 @@
 [![PyPI version](https://badge.fury.io/py/list2term.svg)](https://badge.fury.io/py/list2term)
 [![python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-teal)](https://www.python.org/downloads/)
 
-The `list2term` module provides a convenient way to mirror a list to the terminal and helper methods to display messages from concurrent [asyncio](https://docs.python.org/3/library/asyncio.html) or [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool) processes. The `list2term.Lines` class is a subclass of [collections.UserList](https://docs.python.org/3/library/collections.html#collections.UserList) and is tty aware thus it is safe to use in non-tty environments. This class takes a list instance as an argument and when instantiated is accessible via the data attribute. The list can be any iterable, but its elements need to be printable; they should implement __str__ function. The intent of this class is to display relatively small lists to the terminal and dynamically update the terminal when list elements are upated, added or removed. Thus it is able to mirror a List of objects to the terminal.
+The `list2term` module provides a convenient way to mirror a list to the terminal and helper methods to display messages from concurrent [asyncio](https://docs.python.org/3/library/asyncio.html) or [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool) processes. The `list2term.Lines` class is a subclass of [collections.UserList](https://docs.python.org/3/library/collections.html#collections.UserList) and is tty aware thus it can be safely used in non-tty environments. This class takes a list instance as an argument and when instantiated is accessible via the data attribute. The list can be any iterable, but its elements need to be printable; they should implement __str__ function. The intent of this class is to display relatively small lists to the terminal and dynamically update the terminal when list elements are upated, added or removed. Thus it is able to mirror a List of objects to the terminal.
 
-### Installation
+## Installation
 ```bash
 pip install list2term
 ```
 
-#### [example1 - display list of static size](https://github.com/soda480/list2term/blob/main/examples/example1.py)
+### `Lines`
 
-Create an empty list then add sentences to the list at random indexes. As sentences are updated within the list the respective line in the terminal is updated.
+```
+Lines(
+    data=None,
+    size=None,
+    lookup=None,
+    show_index=True,
+    show_x_axis=True,
+    max_chars=None,
+    use_color=True)
+```
+
+<details><summary>Documentation</summary>
+
+**Parameters**
+
+> `data` - A list of items.
+
+> `size` - An integer designating the size of the initial list - each list item will be initialized to empty string. This parameter should not be used if providing a list of items using the `data` parameter. 
+
+> `lookup` - A list containing unique identifiers that will be used to determine the index of the line to update when using the `write` method. This parameter should only be used when using `list2term` to print messages from background processes running in a multiprocessing pool. The size of the lookup list should be the same size as the `data` list or `size` if provided.
+
+> `show_index` - A boolean to designate if the index for each list item is to be printed, default is True.
+
+> `show_x_axis` - A boolean to designate if the X-axis is to be printed, default is False.
+
+> `max_chars` - An integer designating the maximum length of any list item, if any item is longer than max_chars then the excess will be cut off and the last three digits will be replaced with '...', default is 150.
+
+> `use_color` - A boolean to designate if each list index should be printed with color, default is True.
+
+**Attributes**
+
+> `data` - A real list object used to store the contents of the `Lines` class.
+
+**Functions**
+
+> **write(str)**
+>> Update appropriate line with the message contained within str. The str must be of the format `{identity}->{message}`. The index of the line to update is determined by extracting the identity contained within str, then returning the index of the identity from the `lookup` list provided to the `Lines` contructor. 
+
+</details>
+
+## Examples
+
+### [example1 - display list of static size](https://github.com/soda480/list2term/blob/main/examples/example1.py)
+
+Start with a list of 15 items containing random sentences, then update sentences at random indexes. As items in the list are updated the respective line in the terminal is updated to show the current contents of the list.
 
 <details><summary>Code</summary>
 
@@ -41,9 +85,9 @@ if __name__ == '__main__':
 
 ![example1](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example1.gif)
 
-#### [example2 - display list of dynamic size](https://github.com/soda480/list2term/blob/main/examples/example2.py)
+### [example2 - display list of dynamic size](https://github.com/soda480/list2term/blob/main/examples/example2.py)
 
-Create an empty list then add sentences to the list at random indexes. As sentences are updated within the list the respective line in the terminal is updated. Also show how the terminal behaves when new items are added to the list and when items are removed from the list.
+Start with a list of 10 items containing random sentences, then add sentences to the list, update existing sentences or remove items from the list at random indexes. As items in the list are added, updated, and removed the respective line in the terminal is updated to show the current contents of the list.
 
 <details><summary>Code</summary>
 
@@ -91,39 +135,35 @@ if __name__ == '__main__':
 
 ![example2](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example2.gif)
 
-#### [example3 - display messages from asyncio processes](https://github.com/soda480/pypbars/blob/main/examples/example3.py)
+### [example3 - display messages from asyncio processes](https://github.com/soda480/pypbars/blob/main/examples/example3.py)
 
-This example demonstrates how `list2term` can be used to display messages from asyncio processes. Each line in the terminal represents a asnycio process.
+This example demonstrates how `list2term` can be used to display messages from asyncio processes to the terminal. Each line in the terminal represents a asnycio process.
 
 <details><summary>Code</summary>
 
 ```Python
 import asyncio
 import random
-import uuid
 from faker import Faker
 from list2term import Lines
 
-async def do_work(worker, logger=None):
-    logger.write(f'{worker}->worker is {worker}')
+async def do_work(worker, lines):
     total = random.randint(10, 65)
-    logger.write(f'{worker}->{worker}processing total of {total} items')
     for _ in range(total):
         # mimic an IO-bound process
         await asyncio.sleep(random.choice([.05, .1, .15]))
-        logger.write(f'{worker}->processed {Faker().name()}')
+        lines[worker] = f'processed {Faker().name()}'
     return total
 
 async def run(workers):
-    with Lines(lookup=workers, use_color=True) as logger:
-        doers = (do_work(worker, logger=logger) for worker in workers)
-        return await asyncio.gather(*doers)
+    with Lines(size=workers) as lines:
+        return await asyncio.gather(*(do_work(worker, lines) for worker in range(workers)))
 
 def main():
-    workers = [Faker().user_name() for _ in range(12)]
-    print(f'Total of {len(workers)} workers working concurrently')
+    workers = 12
+    print(f'Total of {workers} workers working concurrently')
     results = asyncio.run(run(workers))
-    print(f'The {len(workers)} workers processed a total of {sum(results)} items')
+    print(f'The {workers} workers processed a total of {sum(results)} items')
 
 if __name__ == '__main__':
     main()
@@ -134,7 +174,7 @@ if __name__ == '__main__':
 ![example3](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example3.gif)
 
 
-#### [example4 - display messages from multiprocessing Pool processes](https://github.com/soda480/list2term/blob/main/examples/example4.py)
+### [example4 - display messages from multiprocessing Pool processes](https://github.com/soda480/list2term/blob/main/examples/example4.py)
 
 This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). The `list2term.multiprocessing` module contains a `pool_map` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute, an iterable of arguments to pass each process, and an optional instance of `Lines`. The method will execute the functions asynchronously, update the terminal lines accordingly and return a multiprocessing.pool.AsyncResult object. Each line in the terminal represents a background worker process.
 
@@ -150,7 +190,6 @@ from list2term import Lines
 from list2term.multiprocessing import pool_map
 from list2term.multiprocessing import CONCURRENCY
 
-
 def is_prime(num):
     if num == 1:
         return False
@@ -161,14 +200,13 @@ def is_prime(num):
         return True
 
 def count_primes(start, stop, logger):
-    workerid = f'{start}:{stop}'
-    logger.write(f'{workerid}->processing total of {stop - start} items')
+    worker_id = f'{start}:{stop}'
     primes = 0
     for number in range(start, stop):
         if is_prime(number):
             primes += 1
-            logger.write(f'{workerid}->{workerid} {number} is prime')
-    logger.write(f'{workerid}->{workerid} processing complete')
+            logger.write(f'{worker_id}->{worker_id} {number} is prime')
+    logger.write(f'{worker_id}->{worker_id} processing complete')
     return primes
 
 def main(number):
@@ -176,13 +214,8 @@ def main(number):
     print(f"Distributing {int(number / step)} ranges across {CONCURRENCY} workers running concurrently")
     iterable = [(index, index + step) for index in range(0, number, step)]
     lookup = [':'.join(map(str, item)) for item in iterable]
-    lines = Lines(lookup=lookup, use_color=True, show_index=True, show_x_axis=False)
     # print to screen with lines context
-    results = pool_map(count_primes, iterable, context=lines, processes=None)
-    # print to screen without lines context
-    # results = pool_map(count_primes, iterable)
-    # do not print to screen
-    # results = pool_map(count_primes, iterable, print_status=False)
+    results = pool_map(count_primes, iterable, context=Lines(lookup=lookup))
     return sum(results.get())
 
 if __name__ == '__main__':
@@ -198,12 +231,12 @@ if __name__ == '__main__':
 ![example4](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example4.gif)
 
 
-#### Other examples
+### Other examples
 
 A Conway [Game-Of-Life](https://github.com/soda480/game-of-life) implementation that uses `list2term` to display game to the terminal.
 
 
-### Development
+## Development
 
 Clone the repository and ensure the latest version of Docker is installed on your development server.
 
