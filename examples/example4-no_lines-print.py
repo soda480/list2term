@@ -26,9 +26,8 @@ def main(number):
     step = int(number / CONCURRENCY)
     print(f"Distributing {int(number / step)} ranges across {CONCURRENCY} workers running concurrently")
     iterable = [(index, index + step) for index in range(0, number, step)]
-    lookup = [':'.join(map(str, item)) for item in iterable]
-    # print to screen with lines context
-    results = pool_map(count_primes, iterable, context=Lines(lookup=lookup))
+    # do not use Lines context but print messages from processes to stderr
+    results = pool_map(count_primes, iterable)
     return sum(results.get())
 
 if __name__ == '__main__':

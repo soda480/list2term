@@ -1,3 +1,4 @@
+import sys
 import logging
 from multiprocessing import Pool
 from multiprocessing import get_context
@@ -50,7 +51,7 @@ def pool_map(function, iterable, context=None, print_status=True, processes=None
                             lines.write(item)
                         else:
                             if print_status:
-                                print(item)
+                                print(item, file=sys.stderr)
                     except Empty:
                         if results.ready():
                             break

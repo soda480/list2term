@@ -23,14 +23,14 @@ class Lines(UserList):
         """
         logger.debug('executing Lines constructor')
         if not sys.stderr.isatty():
-            print('not attached to tty device: lines printed on context manager exit only', file=sys.stderr)
+            print('the error stream is not attached to terminal/tty device: lines will be printed on context manager exit only', file=sys.stderr)
             sys.stderr.flush()
         data = Lines._get_data(data, size, lookup)
         Lines._validate_lookup(lookup, data)
         Lines._validate_data(data)
         super().__init__(initlist=data)
         self._max_chars = max_chars if max_chars else MAX_CHARS
-        self._fill = len(str(len(self.data)))
+        self._fill = len(str(len(self.data) - 1))
         self._current = 0
         self._show_index = show_index
         self._show_x_axis = show_x_axis
@@ -41,54 +41,51 @@ class Lines(UserList):
     def __enter__(self):
         """ on entry hide cursor if stderr is attached to tty
         """
-        self.hide_cursor()
-        self.print_x_axis(force=True)
-        self.print_lines(force=False)
+        self._hide_cursor()
+        self._print_x_axis(force=True)
+        self._print_lines(force=False)
         return self
 
     def __exit__(self, *args):
         """ on exit show cursor if stderr is attached to tty and print items
         """
-        self.print_lines(force=True)
-        self.show_cursor()
+        self._print_lines(force=True)
+        self._show_cursor()
 
     def __setitem__(self, index, item):
         """ set item override
         """
-        super().__setitem__(index, item)
-        self.print_line(index)
+        self.data[index] = item
+        self._print_line(index)
 
     def __delitem__(self, index):
         """ delete item override
         """
-        original_len = len(self.data)
-        super().__delitem__(index)
+        length = len(self.data)
+        del self.data[index]
         if isinstance(index, int):
             # clear last line
-            self._clear_line(original_len - 1)
+            self._clear_line(length - 1)
             start = index if index > 0 else None
-            self.print_lines(start)
+            self._print_lines(start)
         else:
-            # for number in range(index.stop, original_len):
-            #    self._clear_line(number)
-            # self.print_lines(index.start)
             raise NotImplementedError('deleting slices is not supported')
 
     def append(self, item):
         """ append override
         """
-        # need to add some validation here
-        super().append(item)
-        self.print_lines()
+        # need to add validation here
+        self.data.append(item)
+        self._print_lines()
 
     def pop(self, index=-1):
         """ pop override
         """
-        super().pop(index)
+        self.data.pop(index)
         # clear supposed last line in terminal
         self._clear_line(len(self.data))
         start = index if index > 0 else None
-        self.print_lines(start)
+        self._print_lines(start)
 
     def remove(self, item):
         """ remove override
@@ -98,10 +95,11 @@ class Lines(UserList):
     def clear(self):
         """ clear override
         """
-        original_len = len(self.data)
+        length = len(self.data)
         self.data.clear()
-        for number in range(0, original_len):
-            self._clear_line(number)
+        if sys.stderr.isatty():
+            for index in range(0, length):
+                self._clear_line(index)
 
     def _clear_line(self, index):
         """ clear line at index
@@ -110,7 +108,7 @@ class Lines(UserList):
             move_char = self._get_move_char(index)
             print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
 
-    def print_line(self, index, force=False):
+    def _print_line(self, index, force=False):
         """ move to index and print item at index
         """
         if sys.stderr.isatty() or force:
@@ -128,7 +126,7 @@ class Lines(UserList):
             sys.stderr.flush()
             self._current += 1
 
-    def print_x_axis(self, force=False):
+    def _print_x_axis(self, force=False):
         """ print x axis when set
         """
         if (sys.stderr.isatty() or force) and self._show_x_axis:
@@ -139,14 +137,15 @@ class Lines(UserList):
             else:
                 print(f"{spaces}{x_axis}", file=sys.stderr)
 
-    def print_lines(self, force=False, from_index=None):
+    def _print_lines(self, force=False, from_index=None):
         """ print all items
         """
         if from_index is None:
             from_index = 0
         logger.info(f'printing all items starting at index {from_index}')
-        for index, _ in enumerate(self.data[from_index:], from_index):
-            self.print_line(index, force=force)
+        if (sys.stderr.isatty() or force):
+            for index, _ in enumerate(self.data[from_index:], from_index):
+                self._print_line(index, force=force)
 
     def _get_move_char(self, index):
         """ return char to move to index
@@ -172,13 +171,13 @@ class Lines(UserList):
         self._current -= diff
         return Cursor.UP(diff)
 
-    def show_cursor(self):
+    def _show_cursor(self):
         """ show cursor
         """
         if sys.stderr.isatty():
             cursor.show()
 
-    def hide_cursor(self):
+    def _hide_cursor(self):
         """ hide cursor
         """
         if sys.stderr.isatty():
@@ -198,9 +197,11 @@ class Lines(UserList):
             item = ''.join(i for i in item)
         return item
 
-    def get_index_message(self, item):
+    def _get_index_message(self, item):
         """ return index and message contained within item
         """
+        index = None
+        message = item
         if self._lookup:
             # possible future enhancement is for caller to specify regex of item
             regex = r'^(?P<identity>.*)->(?P<message>.*)$'
@@ -210,23 +211,21 @@ class Lines(UserList):
                 try:
                     index = self._lookup.index(identity)
                 except ValueError:
-                    index = None
+                    pass
                 if index is not None:
                     message = match.group('message').lstrip()
-                    return index, message
-        return None, item
+        return index, message
 
     def write(self, item):
         """ update appropriate line with message contained within item
             line is determined by extracting the identity contained within item
             the index is determined getting the index of the identity from the lookup table
         """
-        index, message = self.get_index_message(item)
+        index, message = self._get_index_message(item)
         if index is not None:
-            if self[index] == message:
+            if self[index] != message:
                 # no need to set value at index if it is already set
-                return
-            self[index] = message
+                self[index] = message
 
     @staticmethod
     def _get_data(data, size, lookup):
@@ -234,11 +233,11 @@ class Lines(UserList):
         """
         if data:
             return data
-        if not size:
-            if not lookup:
-                raise ValueError('a data, size or lookup attribute must be provided')
-            size = len(lookup)
-        return [''] * size
+        if size:
+            return [''] * size
+        if lookup:
+            return [''] * len(lookup)
+        raise ValueError('a data, size or lookup attribute must be provided')
 
     @staticmethod
     def _validate_lookup(lookup, data):

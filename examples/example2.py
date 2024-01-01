@@ -31,7 +31,7 @@ def main():
                     lines.pop()
                 if len(lines) > 0:
                     lines.pop()
-            time.sleep(.1)
+            time.sleep(.05)
 
 if __name__ == '__main__':
     main()

@@ -2,6 +2,7 @@ import time
 from list2term import Lines
 from list2term.multiprocessing import pool_map
 from list2term.multiprocessing import CONCURRENCY
+from mock import patch
 
 def is_prime(num):
     if num == 1:
@@ -32,8 +33,9 @@ def main(number):
     return sum(results.get())
 
 if __name__ == '__main__':
-    start = time.perf_counter()
-    number = 100_000
-    result = main(number)
-    stop = time.perf_counter()
-    print(f"Finished in {round(stop - start, 2)} seconds\nTotal number of primes between 0-{number}: {result}")
+    with patch('sys.stderr.isatty', return_value=False):
+        start = time.perf_counter()
+        number = 100_000
+        result = main(number)
+        stop = time.perf_counter()
+        print(f"Finished in {round(stop - start, 2)} seconds\nTotal number of primes between 0-{number}: {result}")
