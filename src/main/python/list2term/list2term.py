@@ -97,8 +97,9 @@ class Lines(UserList):
         """
         length = len(self.data)
         self.data.clear()
-        for index in range(0, length):
-            self._clear_line(index)
+        if sys.stderr.isatty():
+            for index in range(0, length):
+                self._clear_line(index)
 
     def _clear_line(self, index):
         """ clear line at index
@@ -142,8 +143,9 @@ class Lines(UserList):
         if from_index is None:
             from_index = 0
         logger.info(f'printing all items starting at index {from_index}')
-        for index, _ in enumerate(self.data[from_index:], from_index):
-            self._print_line(index, force=force)
+        if (sys.stderr.isatty() or force):
+            for index, _ in enumerate(self.data[from_index:], from_index):
+                self._print_line(index, force=force)
 
     def _get_move_char(self, index):
         """ return char to move to index
