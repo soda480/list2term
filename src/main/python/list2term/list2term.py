@@ -30,7 +30,7 @@ class Lines(UserList):
         Lines._validate_data(data)
         super().__init__(initlist=data)
         self._max_chars = max_chars if max_chars else MAX_CHARS
-        self._fill = len(str(len(self.data))) - 1
+        self._fill = len(str(len(self.data) - 1))
         self._current = 0
         self._show_index = show_index
         self._show_x_axis = show_x_axis

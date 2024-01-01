@@ -141,6 +141,7 @@ class TestLines(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             lines.remove('hello world')
 
+    @patch('list2term.list2term.sys.stderr.isatty', return_value=True)
     @patch('list2term.Lines._validate_data')
     @patch('list2term.Lines._clear_line')
     def test_clear_Should_CallClearLineForAllLines_When_Called(self, clear_line_patch, *patches):
@@ -202,6 +203,7 @@ class TestLines(unittest.TestCase):
         lines._print_x_axis(force=True)
         self.assertEqual(len(print_patch.mock_calls), 1)
 
+    @patch('list2term.list2term.sys.stderr.isatty', return_value=True)
     @patch('list2term.Lines._validate_data')
     @patch('list2term.Lines._print_line')
     def test__print_lines_Should_CallExpected_When_Called(self, print_line_patch, *patches):

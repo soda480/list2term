@@ -43,10 +43,6 @@ Lines(
 
 > `use_color` - A boolean to designate if each list index should be printed with color, default is True.
 
-**Attributes**
-
-> `data` - A real list object containing the contents of the `Lines` class.
-
 **Functions**
 
 > **write(str)**
@@ -149,7 +145,7 @@ async def do_work(worker, lines):
     total = random.randint(10, 65)
     for _ in range(total):
         # mimic an IO-bound process
-        await asyncio.sleep(random.choice([.05, .1, .15]))
+        await asyncio.sleep(random.choice([.05, .1, .025]))
         lines[worker] = f'processed {Faker().name()}'
     return total
 
@@ -158,7 +154,7 @@ async def run(workers):
         return await asyncio.gather(*(do_work(worker, lines) for worker in range(workers)))
 
 def main():
-    workers = 12
+    workers = 15
     print(f'Total of {workers} workers working concurrently')
     results = asyncio.run(run(workers))
     print(f'The {workers} workers processed a total of {sum(results)} items')
