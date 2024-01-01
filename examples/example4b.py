@@ -19,14 +19,14 @@ def is_prime(num):
         return True
 
 def count_primes(start, stop, logger):
-    workerid = f'{start}:{stop}'
-    logger.write(f'{workerid}->processing total of {stop - start} items')
+    worker_id = f'{start}:{stop}'
+    logger.write(f'{worker_id}->processing total of {stop - start} items')
     primes = 0
     for number in range(start, stop):
         if is_prime(number):
             primes += 1
-            logger.write(f'{workerid}->{workerid} {number} is prime')
-    logger.write(f'{workerid}->{workerid} processing complete')
+            logger.write(f'{worker_id}->{worker_id} {number} is prime')
+    logger.write(f'{worker_id}->{worker_id} processing complete')
     return primes
 
 def main(number):

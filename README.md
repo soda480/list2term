@@ -1,6 +1,6 @@
 # list2term
 [![build](https://github.com/soda480/list2term/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/soda480/list2term/actions/workflows/main.yml)
-[![coverage](https://img.shields.io/badge/coverage-93%25-brightgreen)](https://pybuilder.io/)
+[![coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](https://pybuilder.io/)
 [![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
 [![PyPI version](https://badge.fury.io/py/list2term.svg)](https://badge.fury.io/py/list2term)
 [![python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-teal)](https://www.python.org/downloads/)

@@ -23,14 +23,14 @@ class Lines(UserList):
         """
         logger.debug('executing Lines constructor')
         if not sys.stderr.isatty():
-            print('not attached to tty device: lines printed on context manager exit only', file=sys.stderr)
+            print('the error stream is not attached to terminal/tty device: lines will be printed on context manager exit only', file=sys.stderr)
             sys.stderr.flush()
         data = Lines._get_data(data, size, lookup)
         Lines._validate_lookup(lookup, data)
         Lines._validate_data(data)
         super().__init__(initlist=data)
         self._max_chars = max_chars if max_chars else MAX_CHARS
-        self._fill = len(str(len(self.data)))
+        self._fill = len(str(len(self.data))) - 1
         self._current = 0
         self._show_index = show_index
         self._show_x_axis = show_x_axis
@@ -200,6 +200,8 @@ class Lines(UserList):
     def _get_index_message(self, item):
         """ return index and message contained within item
         """
+        index = None
+        message = item
         if self._lookup:
             # possible future enhancement is for caller to specify regex of item
             regex = r'^(?P<identity>.*)->(?P<message>.*)$'
@@ -209,11 +211,10 @@ class Lines(UserList):
                 try:
                     index = self._lookup.index(identity)
                 except ValueError:
-                    index = None
+                    pass
                 if index is not None:
                     message = match.group('message').lstrip()
-                    return index, message
-        return None, item
+        return index, message
 
     def write(self, item):
         """ update appropriate line with message contained within item
@@ -222,10 +223,9 @@ class Lines(UserList):
         """
         index, message = self._get_index_message(item)
         if index is not None:
-            if self[index] == message:
+            if self[index] != message:
                 # no need to set value at index if it is already set
-                return
-            self[index] = message
+                self[index] = message
 
     @staticmethod
     def _get_data(data, size, lookup):
@@ -233,11 +233,11 @@ class Lines(UserList):
         """
         if data:
             return data
-        if not size:
-            if not lookup:
-                raise ValueError('a data, size or lookup attribute must be provided')
-            size = len(lookup)
-        return [''] * size
+        if size:
+            return [''] * size
+        if lookup:
+            return [''] * len(lookup)
+        raise ValueError('a data, size or lookup attribute must be provided')
 
     @staticmethod
     def _validate_lookup(lookup, data):
