@@ -41,22 +41,22 @@ class Lines(UserList):
     def __enter__(self):
         """ on entry hide cursor if stderr is attached to tty
         """
-        self.hide_cursor()
-        self.print_x_axis(force=True)
-        self.print_lines(force=False)
+        self._hide_cursor()
+        self._print_x_axis(force=True)
+        self._print_lines(force=False)
         return self
 
     def __exit__(self, *args):
         """ on exit show cursor if stderr is attached to tty and print items
         """
-        self.print_lines(force=True)
-        self.show_cursor()
+        self._print_lines(force=True)
+        self._show_cursor()
 
     def __setitem__(self, index, item):
         """ set item override
         """
         self.data[index] = item
-        self.print_line(index)
+        self._print_line(index)
 
     def __delitem__(self, index):
         """ delete item override
@@ -67,7 +67,7 @@ class Lines(UserList):
             # clear last line
             self._clear_line(length - 1)
             start = index if index > 0 else None
-            self.print_lines(start)
+            self._print_lines(start)
         else:
             raise NotImplementedError('deleting slices is not supported')
 
@@ -76,7 +76,7 @@ class Lines(UserList):
         """
         # need to add validation here
         self.data.append(item)
-        self.print_lines()
+        self._print_lines()
 
     def pop(self, index=-1):
         """ pop override
@@ -85,7 +85,7 @@ class Lines(UserList):
         # clear supposed last line in terminal
         self._clear_line(len(self.data))
         start = index if index > 0 else None
-        self.print_lines(start)
+        self._print_lines(start)
 
     def remove(self, item):
         """ remove override
@@ -107,7 +107,7 @@ class Lines(UserList):
             move_char = self._get_move_char(index)
             print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
 
-    def print_line(self, index, force=False):
+    def _print_line(self, index, force=False):
         """ move to index and print item at index
         """
         if sys.stderr.isatty() or force:
@@ -125,7 +125,7 @@ class Lines(UserList):
             sys.stderr.flush()
             self._current += 1
 
-    def print_x_axis(self, force=False):
+    def _print_x_axis(self, force=False):
         """ print x axis when set
         """
         if (sys.stderr.isatty() or force) and self._show_x_axis:
@@ -136,14 +136,14 @@ class Lines(UserList):
             else:
                 print(f"{spaces}{x_axis}", file=sys.stderr)
 
-    def print_lines(self, force=False, from_index=None):
+    def _print_lines(self, force=False, from_index=None):
         """ print all items
         """
         if from_index is None:
             from_index = 0
         logger.info(f'printing all items starting at index {from_index}')
         for index, _ in enumerate(self.data[from_index:], from_index):
-            self.print_line(index, force=force)
+            self._print_line(index, force=force)
 
     def _get_move_char(self, index):
         """ return char to move to index
@@ -169,13 +169,13 @@ class Lines(UserList):
         self._current -= diff
         return Cursor.UP(diff)
 
-    def show_cursor(self):
+    def _show_cursor(self):
         """ show cursor
         """
         if sys.stderr.isatty():
             cursor.show()
 
-    def hide_cursor(self):
+    def _hide_cursor(self):
         """ hide cursor
         """
         if sys.stderr.isatty():
@@ -195,7 +195,7 @@ class Lines(UserList):
             item = ''.join(i for i in item)
         return item
 
-    def get_index_message(self, item):
+    def _get_index_message(self, item):
         """ return index and message contained within item
         """
         if self._lookup:
@@ -218,7 +218,7 @@ class Lines(UserList):
             line is determined by extracting the identity contained within item
             the index is determined getting the index of the identity from the lookup table
         """
-        index, message = self.get_index_message(item)
+        index, message = self._get_index_message(item)
         if index is not None:
             if self[index] == message:
                 # no need to set value at index if it is already set

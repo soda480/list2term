@@ -57,7 +57,7 @@ class TestLines(unittest.TestCase):
     def test__hide_cursor_Should_CallHideCursor_When_Tty(self, cursor_patch, stderr_patch, *patches):
         stderr_patch.isatty.return_value = True
         lines = Lines(size=3)
-        lines.hide_cursor()
+        lines._hide_cursor()
         cursor_patch.hide.assert_called_once_with()
 
     @patch('list2term.list2term.sys.stderr')
@@ -65,7 +65,7 @@ class TestLines(unittest.TestCase):
     def test__hide_cursor_Should_CallHideCursor_When_NoTty(self, cursor_patch, stderr_patch, *patches):
         stderr_patch.isatty.return_value = False
         lines = Lines(size=3)
-        lines.hide_cursor()
+        lines._hide_cursor()
         cursor_patch.hide.assert_not_called()
 
     @patch('list2term.Lines._validate_data')
@@ -74,7 +74,7 @@ class TestLines(unittest.TestCase):
     def test__show_cursor_Should_CallShowCursor_When_Tty(self, cursor_patch, stderr_patch, *patches):
         stderr_patch.isatty.return_value = True
         lines = Lines(size=3)
-        lines.show_cursor()
+        lines._show_cursor()
         cursor_patch.show.assert_called_once_with()
 
     @patch('list2term.list2term.sys.stderr')
@@ -82,13 +82,13 @@ class TestLines(unittest.TestCase):
     def test__show_cursor_Should_NotCallShowCursor_When_NoTty(self, cursor_patch, stderr_patch, *patches):
         stderr_patch.isatty.return_value = False
         lines = Lines(size=3)
-        lines.show_cursor()
+        lines._show_cursor()
         cursor_patch.show.assert_not_called()
 
     @patch('list2term.Lines._validate_data')
-    @patch('list2term.Lines.print_lines')
-    @patch('list2term.Lines.hide_cursor')
-    @patch('list2term.Lines.show_cursor')
+    @patch('list2term.Lines._print_lines')
+    @patch('list2term.Lines._hide_cursor')
+    @patch('list2term.Lines._show_cursor')
     def test__enter_exit_Should_HideAndShowCursorAndPrintLines_When_Called(self, show_cursor_patch, hide_cursor_patch, print_lines_patch, *patches):
         with Lines(size=3):
             hide_cursor_patch.assert_called_once_with()
@@ -96,14 +96,14 @@ class TestLines(unittest.TestCase):
         show_cursor_patch.assert_called_once_with()
 
     @patch('list2term.Lines._validate_data')
-    @patch('list2term.Lines.print_line')
+    @patch('list2term.Lines._print_line')
     def test__set_item_Should_CallPrintLine_When_Called(self, print_line_patch, *patches):
         lines = Lines(size=3)
         lines[1] = 'hello world'
         print_line_patch.assert_called_once_with(1)
 
     @patch('list2term.Lines._validate_data')
-    @patch('list2term.Lines.print_lines')
+    @patch('list2term.Lines._print_lines')
     @patch('list2term.Lines._clear_line')
     def test__del_item_Should_CallClearLineAndPrintLines_When_Called(self, clear_line_patch, print_lines_patch, *patches):
         lines = Lines(size=3)
@@ -112,7 +112,7 @@ class TestLines(unittest.TestCase):
         print_lines_patch.assert_called_once_with(1)
 
     @patch('list2term.Lines._validate_data')
-    @patch('list2term.Lines.print_lines')
+    @patch('list2term.Lines._print_lines')
     @patch('list2term.Lines._clear_line')
     def test__del_item_Should_RaiseNotImplementedError_When_CalledWithSlice(self, clear_line_patch, print_lines_patch, *patches):
         lines = Lines(size=3)
@@ -120,14 +120,14 @@ class TestLines(unittest.TestCase):
             del lines[1:2]
 
     @patch('list2term.Lines._validate_data')
-    @patch('list2term.Lines.print_lines')
+    @patch('list2term.Lines._print_lines')
     def test_append_Should_CallPrintLines_When_Called(self, print_lines_patch, *patches):
         lines = Lines(size=3)
         lines.append('hello world')
         print_lines_patch.assert_called_once_with()
 
     @patch('list2term.Lines._validate_data')
-    @patch('list2term.Lines.print_lines')
+    @patch('list2term.Lines._print_lines')
     @patch('list2term.Lines._clear_line')
     def test_pop_Should_CallClearLineAndPrintLines_When_Called(self, clear_line_patch, print_lines_patch, *patches):
         lines = Lines(size=3)
@@ -167,7 +167,7 @@ class TestLines(unittest.TestCase):
         stderr_patch.isatty.return_value = True
         lines = Lines(size=13)
         lines._current = 0
-        lines.print_line(3)
+        lines._print_line(3)
         self.assertEqual(len(print_patch.mock_calls), 2)
         self.assertEqual(lines._current, 1)
 
@@ -177,7 +177,7 @@ class TestLines(unittest.TestCase):
         stderr_patch.isatty.return_value = False
         lines = Lines(size=13)
         lines._current = 0
-        lines.print_line(3)
+        lines._print_line(3)
         # print_patch.assert_not_called()
         self.assertEqual(lines._current, 0)
 
@@ -188,7 +188,7 @@ class TestLines(unittest.TestCase):
         stderr_patch.isatty.return_value = False
         lines = Lines(size=13)
         lines._current = 0
-        lines.print_line(3, force=True)
+        lines._print_line(3, force=True)
         self.assertEqual(len(print_patch.mock_calls), 3)
         self.assertEqual(lines._current, 1)
 
@@ -199,14 +199,14 @@ class TestLines(unittest.TestCase):
         stderr_patch.isatty.return_value = True
         lines = Lines(size=13, show_x_axis=True)
         lines._current = 0
-        lines.print_x_axis(force=True)
+        lines._print_x_axis(force=True)
         self.assertEqual(len(print_patch.mock_calls), 1)
 
     @patch('list2term.Lines._validate_data')
-    @patch('list2term.Lines.print_line')
+    @patch('list2term.Lines._print_line')
     def test__print_lines_Should_CallExpected_When_Called(self, print_line_patch, *patches):
         lines = Lines(size=3)
-        lines.print_lines()
+        lines._print_lines()
         self.assertEqual(len(print_line_patch.mock_calls), 3)
 
     @patch('list2term.list2term.sys.stderr.isatty', return_value=True)
@@ -272,7 +272,7 @@ class TestLines(unittest.TestCase):
         lines.write('i am')
 
     @patch('list2term.Lines._validate_data')
-    @patch('list2term.Lines.get_index_message')
+    @patch('list2term.Lines._get_index_message')
     def test__write_Should_UpdateList_When_MessageMatches(self, get_index_message_patch, *patches):
         get_index_message_patch.return_value = 13, 'dios bendiga los gusanos'
         lines = Lines(size=20)
@@ -287,17 +287,17 @@ class TestLines(unittest.TestCase):
     @patch('list2term.Lines._validate_data')
     def test_get_index_message_Should_ReturnExtractedIndexAndMessage_When_LookupTable(self, *patches):
         lines = Lines(size=3, lookup=['fobia', 'mana', 'moenia'])
-        index, message = lines.get_index_message('mana -> en el muelle de san blas')
+        index, message = lines._get_index_message('mana -> en el muelle de san blas')
         self.assertEqual(index, 1)
         self.assertEqual(message, 'en el muelle de san blas')
 
-        index, message = lines.get_index_message('julieta venegas ->  el presente (unplugged)  ')
+        index, message = lines._get_index_message('julieta venegas ->  el presente (unplugged)  ')
         self.assertIsNone(index)
         self.assertEqual(message, 'julieta venegas ->  el presente (unplugged)  ')
 
     @patch('list2term.Lines._validate_data')
     def test_get_index_message_Should_ReturnExtractedIndexAndMessage_When_NoLookupTable(self, *patches):
         lines = Lines(size=3)
-        index, message = lines.get_index_message('mana -> en el muelle de san blas')
+        index, message = lines._get_index_message('mana -> en el muelle de san blas')
         self.assertIsNone(index)
         self.assertEqual(message, 'mana -> en el muelle de san blas')
