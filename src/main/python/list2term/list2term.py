@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import logging
+import threading
 from collections import UserList
 from colorama import init as colorama_init
 from colorama import Style
@@ -14,6 +15,8 @@ logger = logging.getLogger(__name__)
 MAX_CHARS = 150
 CLEAR_EOL = '\033[K'
 BRIGHT_YELLOW = Style.BRIGHT + Fore.YELLOW
+
+semaphore = threading.Semaphore(1)
 
 
 class Lines(UserList):
@@ -118,13 +121,14 @@ class Lines(UserList):
                     str_index = f"{BRIGHT_YELLOW}{str(index).zfill(self._fill)}{Style.RESET_ALL}: "
                 else:
                     str_index = f"{str(index).zfill(self._fill)}: "
-
-            move_char = self._get_move_char(index)
-            print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
-            sanitized = self._sanitize(self.data[index])
-            print(f'{str_index}{sanitized}', file=sys.stderr)
-            sys.stderr.flush()
-            self._current += 1
+            with semaphore:
+                # ensure single thread access
+                move_char = self._get_move_char(index)
+                print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
+                sanitized = self._sanitize(self.data[index])
+                print(f'{str_index}{sanitized}', file=sys.stderr)
+                sys.stderr.flush()
+                self._current += 1
 
     def _print_x_axis(self, force=False):
         """ print x axis when set
