@@ -70,7 +70,7 @@ class Lines(UserList):
             # clear last line
             self._clear_line(length - 1)
             start = index if index > 0 else None
-            self._print_lines(start)
+            self._print_lines(from_index=start)
         else:
             raise NotImplementedError('deleting slices is not supported')
 
@@ -88,7 +88,7 @@ class Lines(UserList):
         # clear supposed last line in terminal
         self._clear_line(len(self.data))
         start = index if index > 0 else None
-        self._print_lines(start)
+        self._print_lines(from_index=start)
 
     def remove(self, item):
         """ remove override

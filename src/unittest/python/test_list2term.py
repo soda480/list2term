@@ -109,7 +109,7 @@ class TestLines(unittest.TestCase):
         lines = Lines(size=3)
         del lines[1]
         clear_line_patch.assert_called_once_with(2)
-        print_lines_patch.assert_called_once_with(1)
+        print_lines_patch.assert_called_once_with(from_index=1)
 
     @patch('list2term.Lines._validate_data')
     @patch('list2term.Lines._print_lines')
@@ -133,7 +133,7 @@ class TestLines(unittest.TestCase):
         lines = Lines(size=3)
         lines.pop(1)
         clear_line_patch.assert_called_once_with(2)
-        print_lines_patch.assert_called_once_with(1)
+        print_lines_patch.assert_called_once_with(from_index=1)
 
     @patch('list2term.Lines._validate_data')
     def test__remove_Should_RaiseNotImplementedError_When_Called(self, *patches):
