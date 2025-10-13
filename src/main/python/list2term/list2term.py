@@ -201,31 +201,30 @@ class Lines(UserList):
             item = ''.join(i for i in item)
         return item
 
-    def _get_index_message(self, item):
+    def _get_index_message(self, item, line_id=None):
         """ return index and message contained within item
         """
         index = None
         message = item
         if self._lookup:
-            # possible future enhancement is for caller to specify regex of item
-            regex = r'^(?P<identity>.*)->(?P<message>.*)$'
-            match = re.match(regex, item)
-            if match:
-                identity = match.group('identity').strip()
-                try:
-                    index = self._lookup.index(identity)
-                except ValueError:
-                    pass
-                if index is not None:
-                    message = match.group('message').lstrip()
+            if not line_id:
+                match = re.match(r'^(?P<line_id>.*)->(?P<message>.*)$', item)
+                if match:
+                    line_id = match.group('line_id').strip()
+                    index = next((i for i, x in enumerate(self._lookup) if x == line_id), None)
+                    if index is not None:
+                        message = match.group('message').lstrip()
+            else:
+                index = next((i for i, x in enumerate(self._lookup) if x == line_id), None)
         return index, message
 
-    def write(self, item):
+    def write(self, item, line_id=None):
         """ update appropriate line with message contained within item
-            line is determined by extracting the identity contained within item
-            the index is determined getting the index of the identity from the lookup table
+            the index of the line to update is determined by:
+                the index of line_id within lookup
+                extracting line_id contained within item
         """
-        index, message = self._get_index_message(item)
+        index, message = self._get_index_message(item, line_id=line_id)
         if index is not None:
             if self[index] != message:
                 # no need to set value at index if it is already set

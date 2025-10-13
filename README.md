@@ -45,8 +45,8 @@ Lines(
 
 **Functions**
 
-> **write(str)**
->> Update appropriate line with the message contained within str. The str must be of the format `{identity}->{message}`. The index of the line to update is determined by extracting the identity contained within str, then returning the index of the identity from the `lookup` list provided to the `Lines` contructor. 
+> **write(str, line_id=None)**
+>> Update appropriate line with the message contained within str. Provide `line_id` to determine index of line within the `lookup` or the str must be of the format `{line_id}->{message}`. The index of the line to update is determined by extracting the line_id contained within str, then returning the index of the line_id from the `lookup` list provided to the `Lines` contructor. 
 
 </details>
 
