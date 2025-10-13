@@ -13,7 +13,7 @@ def process_item(item, lines):
     return seconds
 
 def main():
-    items = 500
+    items = 250
     num_threads = 10
     with ThreadPoolExecutor(max_workers=num_threads, thread_name_prefix='thread') as executor:
         lookup = [f'thread_{index}' for index in range(num_threads)]

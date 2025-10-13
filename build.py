@@ -13,7 +13,7 @@ use_plugin('pypi:pybuilder_anybadge')
 
 name = 'list2term'
 authors = [Author('Emilio Reyes', 'soda480@gmail.com')]
-summary = 'Provides a convenient way to mirror a list to the terminal and helper methods to display messages from concurrent asyncio or multiprocessing Pool processes.'
+summary = 'A lightweight tool to mirror and dynamically update a Python list in your terminal, with built-in support for concurrent output (asyncio / threading / multiprocessing).'
 url = 'https://github.com/soda480/list2term'
 version = '1.0.2'
 default_task = [

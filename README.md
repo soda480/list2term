@@ -5,14 +5,29 @@
 [![PyPI version](https://badge.fury.io/py/list2term.svg)](https://badge.fury.io/py/list2term)
 [![python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-teal)](https://www.python.org/downloads/)
 
-The `list2term` module provides a convenient way to mirror a list to the terminal and helper methods to display messages from concurrent [asyncio](https://docs.python.org/3/library/asyncio.html) or [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool) processes. The `list2term.Lines` class is a subclass of [collections.UserList](https://docs.python.org/3/library/collections.html#collections.UserList) and is tty aware thus it can be safely used in non-tty environments. This class takes a list instance as an argument and when instantiated is accessible via the data attribute. The list can be any iterable, but its elements need to be printable; they should implement __str__ function. The intent of this class is to display relatively small lists to the terminal and dynamically update the terminal when list elements are upated, added or removed. Thus it is able to mirror a List of objects to the terminal.
+A lightweight tool to mirror and dynamically update a Python list in your terminal, with built-in support for concurrent output (asyncio / threading / multiprocessing).
+
+## Why list2term?
+
+- **Live list reflection**: keep a list’s contents in sync with your terminal display — updates, additions, or removals are reflected in place.
+- **Minimal dependencies**: not a full TUI framework—just what you need to display and update lists.
+- **Concurrency-aware**: includes helpers for safely displaying progress or status messages from `asyncio` tasks or `multiprocessing.Pool` workers.
+- **TTY-aware fallback**: detects when output isn’t a terminal (e.g. piped logs) and disables interactive behavior gracefully.  
+
 
 ## Installation
+
 ```bash
 pip install list2term
 ```
 
-## `Lines`
+## Key Concepts & API
+
+Lines — main class
+
+list2term revolves around the Lines class, a subclass of collections.UserList, which you use to represent and display a list in the terminal.
+
+Constructor signature (default values shown):
 
 ```
 Lines(
@@ -25,30 +40,39 @@ Lines(
     use_color=True)
 ```
 
-<details><summary>Documentation</summary>
-
 **Parameters**
 
-> `data` - A list of items to mirror to the terminal.
+| Parameter     | Description                                                                                                                        |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `data`        | The initial list (or iterable) whose contents you want to mirror.                                                                  |
+| `size`        | If you just know the intended length (but not initial values), you can set size; it initializes elements to empty strings.         |
+| `lookup`      | A list of unique identifiers (strings) used when writing messages from worker processes. Helps map a message to a particular line. |
+| `show_index`  | Whether to prefix each line with its list index (default: `True`).                                                                 |
+| `show_x_axis` | Whether to draw an "X-axis" line under the data (default: `True`).                                                                 |
+| `max_chars`   | Maximum character width per item; longer strings are truncated with `...` (default: 150).                                            |
+| `use_color`   | Whether to color the line indices/identifiers (default: `True`).                                                                   |
 
-> `size` - An integer designating the size of the initial list - each list item will be initialized to empty string. This parameter should not be used if providing a list of items using the `data` parameter. 
+Internally, `Lines` is backed by its `.data` attribute (like any UserList). You can mutate it:
 
-> `lookup` - A list containing unique identifiers that will be used to determine the index of the line to update when using the `write` method. This parameter should only be used when using `list2term` to print messages from background processes running in a multiprocessing pool. The size of the lookup list should be the same size as the `data` list or `size` if provided.
+```
+lines[index] = "new value"
+lines.append("another")
+lines.pop(2)
+```
 
-> `show_index` - A boolean to designate if the index for each list item is to be printed, default is True.
+These updates automatically refresh the terminal.
 
-> `show_x_axis` - A boolean to designate if the X-axis is to be printed, default is False.
+**Concurrent Workers & Message Routing**
 
-> `max_chars` - An integer designating the maximum length of any list item, if any item is longer than max_chars then the excess will be cut off and the last three digits will be replaced with '...', default is 150.
+When running tasks concurrently (via `asyncio` or `multiprocessing.Pool`), you often want each worker to report status lines. list2term supports that via:
 
-> `use_color` - A boolean to designate if each list index should be printed with color, default is True.
+`Lines.write(...)` — accepts strings in the form "{identifier}->{message}". The identifier is looked up in lookup to decide which line to update.
 
-**Functions**
+Multiprocessing helpers — the package offers `pool_map` and other abstractions in `list2term.multiprocessing` to simplify running functions in parallel and routing their messages.
 
-> **write(str, line_id=None)**
->> Update appropriate line with the message contained within str. Provide `line_id` to determine index of line within the `lookup` or the str must be of the format `{line_id}->{message}`. The index of the line to update is determined by extracting the line_id contained within str, then returning the index of the line_id from the `lookup` list provided to the `Lines` contructor. 
+Your worker functions must accept a logging object (e.g. `LinesQueue`) and use logger.write(...) to send messages back.
 
-</details>
+## Examples
 
 ### Display list - [example1](https://github.com/soda480/list2term/blob/main/examples/example1.py)
 
@@ -224,10 +248,57 @@ if __name__ == '__main__':
 
 ![example4](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example4.gif)
 
+### Displaying messages from threads - [example5](https://github.com/soda480/list2term/blob/main/examples/example5.py)
+
+<details><summary>Code</summary>
+
+```Python
+import time
+import random
+import threading
+from faker import Faker
+from concurrent.futures import ThreadPoolExecutor
+from list2term import Lines
+
+def process_item(item, lines):
+    thread_name = threading.current_thread().name
+    lines.write(f'{Faker().name()} processed item {item}', line_id=thread_name)
+    seconds = random.uniform(.04, .3)
+    time.sleep(seconds)
+    return seconds
+
+def main():
+    items = 500
+    num_threads = 10
+    with ThreadPoolExecutor(max_workers=num_threads, thread_name_prefix='thread') as executor:
+        lookup = [f'thread_{index}' for index in range(num_threads)]
+        with Lines(lookup=lookup) as lines:
+            futures = [executor.submit(process_item, item, lines) for item in range(items)]
+            return [future.result() for future in futures]
+
+if __name__ == "__main__":
+    main()
+```
+
+</details>
+
+![example5](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example5.gif)
+
 
 ### Other examples
 
 A Conway [Game-Of-Life](https://github.com/soda480/game-of-life) implementation that uses `list2term` to display game to the terminal.
+
+
+## Caveats & Notes
+
+* Best for small to medium lists — `list2term` is optimized for relatively compact lists (e.g. dozens to low hundreds of lines). Very large lists (> thousands) may overwhelm the terminal.
+
+* Printable elements — items must be convertible to str.
+
+* Non-TTY fallback — if the terminal output is not a TTY (e.g. piped to a file), interactive updates are disabled automatically.
+
+* Worker message format — when using concurrency, messages must either follow the pattern `"{identifier}->{message}"` so that `Lines.write()` can route updates to the correct line. Or pass in `lines_id` argument to `Lines.write()`.
 
 
 ## Development
