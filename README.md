@@ -1,17 +1,16 @@
 # list2term
 [![build](https://github.com/soda480/list2term/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/soda480/list2term/actions/workflows/main.yml)
 [![coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](https://pybuilder.io/)
-[![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
 [![PyPI version](https://badge.fury.io/py/list2term.svg)](https://badge.fury.io/py/list2term)
-[![python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-teal)](https://www.python.org/downloads/)
+[![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-teal)](https://www.python.org/downloads/)
 
 A lightweight tool to mirror and dynamically update a Python list in your terminal, with built-in support for concurrent output (asyncio / threading / multiprocessing).
 
-## Why list2term?
+## Why use `list2term`?
 
 - **Live list reflection**: keep a list’s contents in sync with your terminal display — updates, additions, or removals are reflected in place.
 - **Minimal dependencies**: not a full TUI framework—just what you need to display and update lists.
-- **Concurrency-aware**: includes helpers for safely displaying progress or status messages from `asyncio` tasks or `multiprocessing.Pool` workers.
+- **Concurrency-aware**: includes helpers for safely displaying progress or status messages from `asyncio` tasks, `multiprocessing.Pool` workers or threads.
 - **TTY-aware fallback**: detects when output isn’t a terminal (e.g. piped logs) and disables interactive behavior gracefully.  
 
 
