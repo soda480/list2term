@@ -273,6 +273,7 @@ class TestLines(unittest.TestCase):
         self.assertEqual(result, 'i am')
         lines.write('i am')
 
+    @patch('builtins.print')
     @patch('list2term.Lines._validate_data')
     @patch('list2term.Lines._get_index_message')
     def test__write_Should_UpdateList_When_MessageMatches(self, get_index_message_patch, *patches):
@@ -303,3 +304,14 @@ class TestLines(unittest.TestCase):
         index, message = lines._get_index_message('mana -> en el muelle de san blas')
         self.assertIsNone(index)
         self.assertEqual(message, 'mana -> en el muelle de san blas')
+
+    @patch('list2term.Lines._validate_data')
+    def test_get_index_message_Should_ReturnExtractedIndexAndMessage_When_LookupTableLineId(self, *patches):
+        lines = Lines(size=3, lookup=['fobia', 'mana', 'moenia'])
+        index, message = lines._get_index_message('en el muelle de san blas', line_id='mana')
+        self.assertEqual(index, 1)
+        self.assertEqual(message, 'en el muelle de san blas')
+
+        index, message = lines._get_index_message('  el presente (unplugged)  ', line_id='julieta venegas')
+        self.assertIsNone(index)
+        self.assertEqual(message, '  el presente (unplugged)  ')
