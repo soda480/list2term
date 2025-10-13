@@ -1,5 +1,5 @@
 # list2term
-[![build](https://github.com/soda480/list2term/actions/workflows/ci/badge.svg)](https://github.com/soda480/list2term/actions)
+[![ci](https://github.com/soda480/list2term/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/soda480/list2term/actions/workflows/ci.yml)
 ![Coverage](https://raw.githubusercontent.com/soda480/list2term/main/badges/coverage.svg)
 [![PyPI version](https://badge.fury.io/py/list2term.svg)](https://badge.fury.io/py/list2term)
 [![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-teal)](https://www.python.org/downloads/)
