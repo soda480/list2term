@@ -273,6 +273,7 @@ class TestLines(unittest.TestCase):
         self.assertEqual(result, 'i am')
         lines.write('i am')
 
+    @patch('builtins.print')
     @patch('list2term.Lines._validate_data')
     @patch('list2term.Lines._get_index_message')
     def test__write_Should_UpdateList_When_MessageMatches(self, get_index_message_patch, *patches):

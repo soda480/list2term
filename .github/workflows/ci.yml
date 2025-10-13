@@ -1,0 +1,72 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  pull_request:
+  schedule:
+  - cron: "0 8 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: lint source code 
+        run: make lint
+
+      - name: run unit tests
+        run: make test
+
+      - name: run bandit scan
+        run: make bandit
+
+      - name: measure cyclomatic complexity
+        run: make cc
+
+      - name: compute code coverage
+        run: make coverage
+
+      - name: upload coverage artifacts
+        if: ${{ matrix.python_version == '3.12' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage_html/
+            coverage.xml
+
+  publish-and-release:
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags')"
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: publish package to pypi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: make publish
+
+      - name: create github release
+        uses: softprops/action-gh-release@v1
