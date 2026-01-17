@@ -36,20 +36,25 @@ Lines(
     show_index=True,
     show_x_axis=True,
     max_chars=None,
-    use_color=True)
+    use_color=True,
+    y_axis_labels=None,
+    x_axis=None)
 ```
 
 **Parameters**
 
 | Parameter     | Description                                                                                                                        |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `data`        | The initial list (or iterable) whose contents you want to mirror.                                                                  |
-| `size`        | If you just know the intended length (but not initial values), you can set size; it initializes elements to empty strings.         |
-| `lookup`      | A list of unique identifiers (strings) used when writing messages from worker processes. Helps map a message to a particular line. |
-| `show_index`  | Whether to prefix each line with its list index (default: `True`).                                                                 |
-| `show_x_axis` | Whether to draw an "X-axis" line under the data (default: `True`).                                                                 |
-| `max_chars`   | Maximum character width per item; longer strings are truncated with `...` (default: 150).                                            |
-| `use_color`   | Whether to color the line indices/identifiers (default: `True`).                                                                   |
+| `data`        | The initial list or iterable containing the items to display and sync with the terminal.                                           |
+| `size`        | Integer specifying the initial length of the list. When provided, the list is pre-populated with empty strings. Use this when you know the desired list size but not the initial values.  |
+| `lookup`      | A list of unique string identifiers used to route messages from concurrent workers to specific lines. Each identifier in the lookup list corresponds to one line in the display (default: `None`). |
+| `show_index`  | Boolean flag to display line indices or labels on the left side of each line (default: `True`).                                   |
+| `show_x_axis` | Boolean flag to display an X-axis ruler above the data for reference (default: `True`).                                           |
+| `max_chars`   | Maximum character width allowed per line; text exceeding this limit is truncated and suffixed with `...` (default: 150).         |
+| `use_color`   | Boolean flag to apply terminal color styling to line indices and labels (default: `True`).                                        |
+| `y_axis_labels` | A list of custom labels to display on the Y-axis (left side), replacing default numeric indices. Must match the length of `data`. Labels are right-justified before each line (default: `None`, uses numeric indices). |
+| `x_axis`     | A string or list of strings to display as X-axis ruler(s) above the data. Accepts a single string for one line or a list for multiple lines. If not provided, a default numbered ruler is auto-generated (default: `None`). |
+
 
 Internally, `Lines` is backed by its `.data` attribute (like any UserList). You can mutate it:
 
@@ -173,7 +178,8 @@ async def do_work(worker, lines):
     return total
 
 async def run(workers):
-    with Lines(size=workers) as lines:
+    y_axis_labels = [f'Worker {str(i + 1).zfill(len(str(workers)))}' for i in range(workers)]
+    with Lines(size=workers, y_axis_labels=y_axis_labels) as lines:
         return await asyncio.gather(*(do_work(worker, lines) for worker in range(workers)))
 
 def main():
