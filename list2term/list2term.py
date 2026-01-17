@@ -21,12 +21,18 @@ semaphore = threading.Semaphore(1)
 
 class Lines(UserList):
 
-    def __init__(self, data=None, size=None, lookup=None, show_index=True, show_x_axis=False, max_chars=None, use_color=True):
+    def __init__(self, data=None, size=None, lookup=None, show_index=True, show_x_axis=False,
+                 max_chars=None, use_color=True, y_axis_labels=None, x_axis=None):
         """ constructor
         """
         logger.debug('executing Lines constructor')
         if not sys.stderr.isatty():
-            print('the error stream is not attached to terminal/tty device: lines will be printed on context manager exit only', file=sys.stderr)
+            print(
+                'the error stream is not attached to terminal/tty '
+                'device: lines will be printed on context manager '
+                'exit only',
+                file=sys.stderr
+            )
             sys.stderr.flush()
         data = Lines._get_data(data, size, lookup)
         Lines._validate_lookup(lookup, data)
@@ -39,6 +45,15 @@ class Lines(UserList):
         self._show_x_axis = show_x_axis
         self._lookup = lookup
         self._use_color = use_color
+        if y_axis_labels and len(y_axis_labels) != len(self.data):
+            raise ValueError('size of y_axis_labels must equal size of data')
+        self._y_axis_labels = y_axis_labels
+        self._y_axis_labels_max_len = (
+            Lines.max_len(y_axis_labels)
+            if y_axis_labels
+            else len(str(len(self.data) - 1))
+        )
+        self._x_axis = x_axis
         colorama_init()
 
     def __enter__(self):
@@ -70,7 +85,7 @@ class Lines(UserList):
             # clear last line
             self._clear_line(length - 1)
             start = index if index > 0 else None
-            self._print_lines(start)
+            self._print_lines(from_index=start)
         else:
             raise NotImplementedError('deleting slices is not supported')
 
@@ -88,7 +103,7 @@ class Lines(UserList):
         # clear supposed last line in terminal
         self._clear_line(len(self.data))
         start = index if index > 0 else None
-        self._print_lines(start)
+        self._print_lines(from_index=start)
 
     def remove(self, item):
         """ remove override
@@ -115,31 +130,59 @@ class Lines(UserList):
         """ move to index and print item at index
         """
         if sys.stderr.isatty() or force:
-            str_index = ''
-            if self._show_index:
-                if self._use_color:
-                    str_index = f"{BRIGHT_YELLOW}{str(index).zfill(self._fill)}{Style.RESET_ALL}: "
-                else:
-                    str_index = f"{str(index).zfill(self._fill)}: "
             with semaphore:
                 # ensure single thread access
                 move_char = self._get_move_char(index)
                 print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
                 sanitized = self._sanitize(self.data[index])
+                str_index = self._get_str_index(index)
                 print(f'{str_index}{sanitized}', file=sys.stderr)
                 sys.stderr.flush()
                 self._current += 1
 
+    def _get_str_index(self, index):
+        """ return index with y axis label if set
+        """
+        if not self._show_index:
+            return ''
+        if self._y_axis_labels:
+            label = self._y_axis_labels[index].rjust(self._y_axis_labels_max_len)
+        else:
+            label = str(index).zfill(self._fill)
+        if not self._use_color:
+            return f'{label}: '
+        return f'{BRIGHT_YELLOW}{label}{Style.RESET_ALL}: '
+
     def _print_x_axis(self, force=False):
-        """ print x axis when set
+        """ print x axis when set (supports single string or list of strings)
         """
         if (sys.stderr.isatty() or force) and self._show_x_axis:
-            x_axis = ''.join([str(round(i / 10))[-1] if i % 10 == 0 else '.' for i in range(self._max_chars)])
-            spaces = ' ' * 4 if self._show_index else ''
-            if self._use_color:
-                print(f"{spaces}{BRIGHT_YELLOW}{x_axis}{Style.RESET_ALL}", file=sys.stderr)
+            if isinstance(self._x_axis, list):
+                x_axis_lines = self._x_axis
+            elif self._x_axis:
+                x_axis_lines = [self._x_axis]
             else:
-                print(f"{spaces}{x_axis}", file=sys.stderr)
+                x_axis_lines = [
+                    ''.join(
+                        [str(round(i / 10))[-1] if i % 10 == 0 else '.'
+                         for i in range(self._max_chars)]
+                    )
+                ]
+
+            # add padding for y axis labels the + 2 is for ': '
+            spaces = (
+                ' ' * (self._y_axis_labels_max_len + 2)
+                if self._show_index else ''
+            )
+
+            for x_axis in x_axis_lines:
+                if self._use_color:
+                    print(
+                        f"{spaces}{BRIGHT_YELLOW}{x_axis}{Style.RESET_ALL}",
+                        file=sys.stderr
+                    )
+                else:
+                    print(f"{spaces}{x_axis}", file=sys.stderr)
 
     def _print_lines(self, force=False, from_index=None):
         """ print all items
@@ -259,4 +302,15 @@ class Lines(UserList):
         if sys.stderr.isatty():
             size = os.get_terminal_size()
             if len(data) > size.lines:
-                raise ValueError(f'number of items to display {len(data)} exceeds current terminal lines size {size.lines}')
+                raise ValueError(
+                    f'number of items to display {len(data)} '
+                    f'exceeds current terminal lines size {size.lines}'
+                )
+
+    @staticmethod
+    def max_len(items):
+        """ return the length of the longest item in a list
+        """
+        if not items:
+            return 0
+        return max(len(i) for i in items)
