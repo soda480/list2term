@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import cursor
 import logging
 import threading
 from collections import UserList
@@ -8,15 +9,12 @@ from colorama import init as colorama_init
 from colorama import Style
 from colorama import Fore
 from colorama import Cursor
-import cursor
 
 logger = logging.getLogger(__name__)
 
 MAX_CHARS = 150
 CLEAR_EOL = '\033[K'
 BRIGHT_YELLOW = Style.BRIGHT + Fore.YELLOW
-
-semaphore = threading.Semaphore(1)
 
 
 class Lines(UserList):
@@ -56,6 +54,7 @@ class Lines(UserList):
         )
         self._x_axis = x_axis
         colorama_init()
+        self._lock = threading.Lock()
 
     def __enter__(self):
         """ on entry hide cursor if stderr is attached to tty
@@ -131,7 +130,7 @@ class Lines(UserList):
         """ move to index and print item at index
         """
         if self._isatty or force:
-            with semaphore:
+            with self._lock:
                 # ensure single thread access
                 move_char = self._get_move_char(index)
                 print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
