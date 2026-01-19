@@ -17,7 +17,7 @@ def main():
     num_threads = 10
     with ThreadPoolExecutor(max_workers=num_threads, thread_name_prefix='thread') as executor:
         lookup = [f'thread_{index}' for index in range(num_threads)]
-        with Lines(lookup=lookup) as lines:
+        with Lines(lookup=lookup, y_axis_labels=lookup) as lines:
             futures = [executor.submit(process_item, item, lines) for item in range(items)]
             return [future.result() for future in futures]
 

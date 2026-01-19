@@ -170,7 +170,7 @@ class TestLines(unittest.TestCase):
         lines._current = 0
         lines._print_line(3)
         self.assertEqual(len(print_patch.mock_calls), 2)
-        self.assertEqual(lines._current, 1)
+        self.assertEqual(lines._current, 4)
 
     @patch('list2term.list2term.sys.stderr')
     @patch('builtins.print')
@@ -191,7 +191,7 @@ class TestLines(unittest.TestCase):
         lines._current = 0
         lines._print_line(3, force=True)
         self.assertEqual(len(print_patch.mock_calls), 3)
-        self.assertEqual(lines._current, 1)
+        self.assertEqual(lines._current, 4)
 
     @patch('list2term.Lines._validate_data')
     @patch('list2term.list2term.sys.stderr')

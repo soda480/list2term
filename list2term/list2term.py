@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import cursor
 import logging
 import threading
 from collections import UserList
@@ -8,15 +9,13 @@ from colorama import init as colorama_init
 from colorama import Style
 from colorama import Fore
 from colorama import Cursor
-import cursor
 
 logger = logging.getLogger(__name__)
 
 MAX_CHARS = 150
 CLEAR_EOL = '\033[K'
 BRIGHT_YELLOW = Style.BRIGHT + Fore.YELLOW
-
-semaphore = threading.Semaphore(1)
+LINE_RE = re.compile(r'^(?P<line_id>.*)->(?P<message>.*)$')
 
 
 class Lines(UserList):
@@ -26,17 +25,18 @@ class Lines(UserList):
         """ constructor
         """
         logger.debug('executing Lines constructor')
-        if not sys.stderr.isatty():
+        self._isatty = sys.stderr.isatty()
+        if not self._isatty:
             print(
-                'the error stream is not attached to terminal/tty '
-                'device: lines will be printed on context manager '
-                'exit only',
+                'the error stream is not attached to a terminal/tty device: '
+                'x-axis will be printed immediately; lines will be printed on '
+                'context manager exit only',
                 file=sys.stderr
             )
             sys.stderr.flush()
         data = Lines._get_data(data, size, lookup)
         Lines._validate_lookup(lookup, data)
-        Lines._validate_data(data)
+        Lines._validate_data(data, self._isatty)
         super().__init__(initlist=data)
         self._max_chars = max_chars if max_chars else MAX_CHARS
         self._fill = len(str(len(self.data) - 1))
@@ -44,6 +44,7 @@ class Lines(UserList):
         self._show_index = show_index
         self._show_x_axis = show_x_axis
         self._lookup = lookup
+        self._lookup_map = {key: index for index, key in enumerate(lookup)} if lookup else None
         self._use_color = use_color
         if y_axis_labels and len(y_axis_labels) != len(self.data):
             raise ValueError('size of y_axis_labels must equal size of data')
@@ -55,6 +56,7 @@ class Lines(UserList):
         )
         self._x_axis = x_axis
         colorama_init()
+        self._lock = threading.Lock()
 
     def __enter__(self):
         """ on entry hide cursor if stderr is attached to tty
@@ -115,22 +117,22 @@ class Lines(UserList):
         """
         length = len(self.data)
         self.data.clear()
-        if sys.stderr.isatty():
+        if self._isatty:
             for index in range(0, length):
                 self._clear_line(index)
 
     def _clear_line(self, index):
         """ clear line at index
         """
-        if sys.stderr.isatty():
+        if self._isatty:
             move_char = self._get_move_char(index)
             print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
 
     def _print_line(self, index, force=False):
         """ move to index and print item at index
         """
-        if sys.stderr.isatty() or force:
-            with semaphore:
+        if self._isatty or force:
+            with self._lock:
                 # ensure single thread access
                 move_char = self._get_move_char(index)
                 print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
@@ -138,7 +140,7 @@ class Lines(UserList):
                 str_index = self._get_str_index(index)
                 print(f'{str_index}{sanitized}', file=sys.stderr)
                 sys.stderr.flush()
-                self._current += 1
+                self._current = index + 1
 
     def _get_str_index(self, index):
         """ return index with y axis label if set
@@ -156,7 +158,7 @@ class Lines(UserList):
     def _print_x_axis(self, force=False):
         """ print x axis when set (supports single string or list of strings)
         """
-        if (sys.stderr.isatty() or force) and self._show_x_axis:
+        if (self._isatty or force) and self._show_x_axis:
             if isinstance(self._x_axis, list):
                 x_axis_lines = self._x_axis
             elif self._x_axis:
@@ -164,8 +166,8 @@ class Lines(UserList):
             else:
                 x_axis_lines = [
                     ''.join(
-                        [str(round(i / 10))[-1] if i % 10 == 0 else '.'
-                         for i in range(self._max_chars)]
+                        str(round(i / 10))[-1] if i % 10 == 0 else '.'
+                        for i in range(self._max_chars)
                     )
                 ]
 
@@ -189,8 +191,8 @@ class Lines(UserList):
         """
         if from_index is None:
             from_index = 0
-        logger.info(f'printing all items starting at index {from_index}')
-        if (sys.stderr.isatty() or force):
+        logger.debug('printing all items starting at index %s', from_index)
+        if (self._isatty or force):
             for index, _ in enumerate(self.data[from_index:], from_index):
                 self._print_line(index, force=force)
 
@@ -221,44 +223,62 @@ class Lines(UserList):
     def _show_cursor(self):
         """ show cursor
         """
-        if sys.stderr.isatty():
+        if self._isatty:
             cursor.show()
 
     def _hide_cursor(self):
         """ hide cursor
         """
-        if sys.stderr.isatty():
+        if self._isatty:
             cursor.hide()
 
     def _sanitize(self, item):
-        """ sanitize item
+        """ sanitize item for terminal display.
+
+            Supports:
+            - str
+            - list/tuple of parts (e.g. ['foo', Fore.RED, 'bar'])
+            - other objects via str()
+            Truncates to max_chars and strips after first newline.
         """
-        if type(item).__str__ is not object.__str__:
-            # if item has __str__ that is not from object then call it
-            item = str(item)
-        if isinstance(item, str):
-            item = item.split('\n')[0]
-            if len(item) > self._max_chars:
-                item = f'{item[0:self._max_chars - 3]}...'
+        if item is None:
+            s = ''
+        elif isinstance(item, str):
+            s = item
+        elif isinstance(item, (list, tuple)):
+            # join parts safely (preserves ANSI sequences if present)
+            s = ''.join('' if part is None else str(part) for part in item)
         else:
-            item = ''.join(i for i in item)
-        return item
+            # fallback: try to string-ify
+            s = str(item)
+
+        # keep first line only
+        s = s.split('\n', 1)[0]
+
+        # truncate (raw length; if you later re-add ANSI-aware truncation, swap here)
+        if len(s) > self._max_chars:
+            s = f'{s[:self._max_chars - 3]}...'
+
+        return s
 
     def _get_index_message(self, item, line_id=None):
         """ return index and message contained within item
         """
         index = None
         message = item
-        if self._lookup:
-            if not line_id:
-                match = re.match(r'^(?P<line_id>.*)->(?P<message>.*)$', item)
+        if self._lookup_map:
+            if not line_id and isinstance(item, str):
+                match = LINE_RE.match(item)
                 if match:
-                    line_id = match.group('line_id').strip()
-                    index = next((i for i, x in enumerate(self._lookup) if x == line_id), None)
-                    if index is not None:
+                    extracted_id = match.group('line_id').strip()
+                    extracted_index = self._lookup_map.get(extracted_id)
+
+                    if extracted_index is not None:
+                        index = extracted_index
                         message = match.group('message').lstrip()
-            else:
-                index = next((i for i, x in enumerate(self._lookup) if x == line_id), None)
+                    return index, message
+
+            index = self._lookup_map.get(line_id) if line_id else None
         return index, message
 
     def write(self, item, line_id=None):
@@ -296,11 +316,14 @@ class Lines(UserList):
                 raise ValueError('size of lookup must equal size of data')
 
     @staticmethod
-    def _validate_data(data):
+    def _validate_data(data, isatty):
         """ validate data list can be displayed on terminal
         """
-        if sys.stderr.isatty():
-            size = os.get_terminal_size()
+        if isatty:
+            try:
+                size = os.get_terminal_size()
+            except OSError:
+                return
             if len(data) > size.lines:
                 raise ValueError(
                     f'number of items to display {len(data)} '
