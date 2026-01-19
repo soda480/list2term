@@ -166,8 +166,8 @@ class Lines(UserList):
             else:
                 x_axis_lines = [
                     ''.join(
-                        [str(round(i / 10))[-1] if i % 10 == 0 else '.'
-                         for i in range(self._max_chars)]
+                        str(round(i / 10))[-1] if i % 10 == 0 else '.'
+                        for i in range(self._max_chars)
                     )
                 ]
 
@@ -233,18 +233,33 @@ class Lines(UserList):
             cursor.hide()
 
     def _sanitize(self, item):
-        """ sanitize item
+        """ sanitize item for terminal display.
+
+            Supports:
+            - str
+            - list/tuple of parts (e.g. ['foo', Fore.RED, 'bar'])
+            - other objects via str()
+            Truncates to max_chars and strips after first newline.
         """
-        if type(item).__str__ is not object.__str__:
-            # if item has __str__ that is not from object then call it
-            item = str(item)
-        if isinstance(item, str):
-            item = item.split('\n')[0]
-            if len(item) > self._max_chars:
-                item = f'{item[0:self._max_chars - 3]}...'
+        if item is None:
+            s = ''
+        elif isinstance(item, str):
+            s = item
+        elif isinstance(item, (list, tuple)):
+            # join parts safely (preserves ANSI sequences if present)
+            s = ''.join('' if part is None else str(part) for part in item)
         else:
-            item = ''.join(i for i in item)
-        return item
+            # fallback: try to string-ify
+            s = str(item)
+
+        # keep first line only
+        s = s.split('\n', 1)[0]
+
+        # truncate (raw length; if you later re-add ANSI-aware truncation, swap here)
+        if len(s) > self._max_chars:
+            s = f'{s[:self._max_chars - 3]}...'
+
+        return s
 
     def _get_index_message(self, item, line_id=None):
         """ return index and message contained within item
