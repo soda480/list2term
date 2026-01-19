@@ -26,7 +26,8 @@ class Lines(UserList):
         """ constructor
         """
         logger.debug('executing Lines constructor')
-        if not sys.stderr.isatty():
+        self._isatty = sys.stderr.isatty()
+        if not self._isatty:
             print(
                 'the error stream is not attached to terminal/tty '
                 'device: lines will be printed on context manager '
@@ -36,7 +37,7 @@ class Lines(UserList):
             sys.stderr.flush()
         data = Lines._get_data(data, size, lookup)
         Lines._validate_lookup(lookup, data)
-        Lines._validate_data(data)
+        Lines._validate_data(data, self._isatty)
         super().__init__(initlist=data)
         self._max_chars = max_chars if max_chars else MAX_CHARS
         self._fill = len(str(len(self.data) - 1))
@@ -115,21 +116,21 @@ class Lines(UserList):
         """
         length = len(self.data)
         self.data.clear()
-        if sys.stderr.isatty():
+        if self._isatty:
             for index in range(0, length):
                 self._clear_line(index)
 
     def _clear_line(self, index):
         """ clear line at index
         """
-        if sys.stderr.isatty():
+        if self._isatty:
             move_char = self._get_move_char(index)
             print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
 
     def _print_line(self, index, force=False):
         """ move to index and print item at index
         """
-        if sys.stderr.isatty() or force:
+        if self._isatty or force:
             with semaphore:
                 # ensure single thread access
                 move_char = self._get_move_char(index)
@@ -156,7 +157,7 @@ class Lines(UserList):
     def _print_x_axis(self, force=False):
         """ print x axis when set (supports single string or list of strings)
         """
-        if (sys.stderr.isatty() or force) and self._show_x_axis:
+        if (self._isatty or force) and self._show_x_axis:
             if isinstance(self._x_axis, list):
                 x_axis_lines = self._x_axis
             elif self._x_axis:
@@ -190,7 +191,7 @@ class Lines(UserList):
         if from_index is None:
             from_index = 0
         logger.info(f'printing all items starting at index {from_index}')
-        if (sys.stderr.isatty() or force):
+        if (self._isatty or force):
             for index, _ in enumerate(self.data[from_index:], from_index):
                 self._print_line(index, force=force)
 
@@ -221,13 +222,13 @@ class Lines(UserList):
     def _show_cursor(self):
         """ show cursor
         """
-        if sys.stderr.isatty():
+        if self._isatty:
             cursor.show()
 
     def _hide_cursor(self):
         """ hide cursor
         """
-        if sys.stderr.isatty():
+        if self._isatty:
             cursor.hide()
 
     def _sanitize(self, item):
@@ -296,10 +297,10 @@ class Lines(UserList):
                 raise ValueError('size of lookup must equal size of data')
 
     @staticmethod
-    def _validate_data(data):
+    def _validate_data(data, isatty):
         """ validate data list can be displayed on terminal
         """
-        if sys.stderr.isatty():
+        if isatty:
             size = os.get_terminal_size()
             if len(data) > size.lines:
                 raise ValueError(
