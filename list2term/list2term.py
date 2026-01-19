@@ -28,9 +28,9 @@ class Lines(UserList):
         self._isatty = sys.stderr.isatty()
         if not self._isatty:
             print(
-                'the error stream is not attached to terminal/tty '
-                'device: lines will be printed on context manager '
-                'exit only',
+                'the error stream is not attached to a terminal/tty device: '
+                'x-axis will be printed immediately; lines will be printed on '
+                'context manager exit only',
                 file=sys.stderr
             )
             sys.stderr.flush()
@@ -266,16 +266,14 @@ class Lines(UserList):
         """
         index = None
         message = item
-        if self._lookup:
-            if not line_id:
+        if self._lookup_map:
+            if not line_id and isinstance(item, str):
                 match = LINE_RE.match(item)
                 if match:
                     line_id = match.group('line_id').strip()
-                    index = self._lookup_map.get(line_id)
-                    if index is not None:
-                        message = match.group('message').lstrip()
-            else:
-                index = next((i for i, x in enumerate(self._lookup) if x == line_id), None)
+                    message = match.group('message').lstrip()
+
+            index = self._lookup_map.get(line_id) if line_id else None
         return index, message
 
     def write(self, item, line_id=None):
@@ -317,7 +315,10 @@ class Lines(UserList):
         """ validate data list can be displayed on terminal
         """
         if isatty:
-            size = os.get_terminal_size()
+            try:
+                size = os.get_terminal_size()
+            except OSError:
+                return
             if len(data) > size.lines:
                 raise ValueError(
                     f'number of items to display {len(data)} '
