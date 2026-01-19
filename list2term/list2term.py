@@ -270,8 +270,13 @@ class Lines(UserList):
             if not line_id and isinstance(item, str):
                 match = LINE_RE.match(item)
                 if match:
-                    line_id = match.group('line_id').strip()
-                    message = match.group('message').lstrip()
+                    extracted_id = match.group('line_id').strip()
+                    extracted_index = self._lookup_map.get(extracted_id)
+
+                    if extracted_index is not None:
+                        index = extracted_index
+                        message = match.group('message').lstrip()
+                    return index, message
 
             index = self._lookup_map.get(line_id) if line_id else None
         return index, message
