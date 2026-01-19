@@ -140,7 +140,7 @@ class Lines(UserList):
                 str_index = self._get_str_index(index)
                 print(f'{str_index}{sanitized}', file=sys.stderr)
                 sys.stderr.flush()
-                self._current += 1
+                self._current = index + 1
 
     def _get_str_index(self, index):
         """ return index with y axis label if set
