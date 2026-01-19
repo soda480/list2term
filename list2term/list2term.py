@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 MAX_CHARS = 150
 CLEAR_EOL = '\033[K'
 BRIGHT_YELLOW = Style.BRIGHT + Fore.YELLOW
+LINE_RE = re.compile(r'^(?P<line_id>.*)->(?P<message>.*)$')
 
 
 class Lines(UserList):
@@ -43,6 +44,7 @@ class Lines(UserList):
         self._show_index = show_index
         self._show_x_axis = show_x_axis
         self._lookup = lookup
+        self._lookup_map = {key: index for index, key in enumerate(lookup)} if lookup else None
         self._use_color = use_color
         if y_axis_labels and len(y_axis_labels) != len(self.data):
             raise ValueError('size of y_axis_labels must equal size of data')
@@ -189,7 +191,7 @@ class Lines(UserList):
         """
         if from_index is None:
             from_index = 0
-        logger.info(f'printing all items starting at index {from_index}')
+        logger.debug('printing all items starting at index %s', from_index)
         if (self._isatty or force):
             for index, _ in enumerate(self.data[from_index:], from_index):
                 self._print_line(index, force=force)
@@ -251,10 +253,10 @@ class Lines(UserList):
         message = item
         if self._lookup:
             if not line_id:
-                match = re.match(r'^(?P<line_id>.*)->(?P<message>.*)$', item)
+                match = LINE_RE.match(item)
                 if match:
                     line_id = match.group('line_id').strip()
-                    index = next((i for i, x in enumerate(self._lookup) if x == line_id), None)
+                    index = self._lookup_map.get(line_id)
                     if index is not None:
                         message = match.group('message').lstrip()
             else:
