@@ -56,56 +56,64 @@ class Lines(UserList):
         )
         self._x_axis = x_axis
         colorama_init()
-        self._lock = threading.Lock()
+        # Re-entrant because public methods may call helpers that also lock.
+        # This lets us lock "whole operations" (mutate data + print) safely.
+        self._lock = threading.RLock()
 
     def __enter__(self):
         """ on entry hide cursor if stderr is attached to tty
         """
-        self._hide_cursor()
-        self._print_x_axis(force=True)
-        self._print_lines(force=False)
-        return self
+        with self._lock:
+            self._hide_cursor()
+            self._print_x_axis(force=True)
+            self._print_lines(force=False)
+            return self
 
     def __exit__(self, *args):
         """ on exit show cursor if stderr is attached to tty and print items
         """
-        self._print_lines(force=True)
-        self._show_cursor()
+        with self._lock:
+            self._print_lines(force=True)
+            self._show_cursor()
 
     def __setitem__(self, index, item):
         """ set item override
         """
-        self.data[index] = item
-        self._print_line(index)
+        with self._lock:
+            self.data[index] = item
+            self._print_line(index)
 
     def __delitem__(self, index):
         """ delete item override
         """
-        length = len(self.data)
-        del self.data[index]
-        if isinstance(index, int):
-            # clear last line
-            self._clear_line(length - 1)
-            start = index if index > 0 else None
-            self._print_lines(from_index=start)
-        else:
-            raise NotImplementedError('deleting slices is not supported')
+        with self._lock:
+            length = len(self.data)
+            del self.data[index]
+            if isinstance(index, int):
+                # clear last line
+                self._clear_line(length - 1)
+                start = index if index > 0 else None
+                self._print_lines(from_index=start)
+            else:
+                raise NotImplementedError('deleting slices is not supported')
 
     def append(self, item):
         """ append override
         """
-        # need to add validation here
-        self.data.append(item)
-        self._print_lines()
+        with self._lock:
+            # need to add validation here
+            self.data.append(item)
+            self._print_lines()
 
     def pop(self, index=-1):
         """ pop override
         """
-        self.data.pop(index)
-        # clear supposed last line in terminal
-        self._clear_line(len(self.data))
-        start = index if index > 0 else None
-        self._print_lines(from_index=start)
+        with self._lock:
+            self.data.pop(index)
+            # clear supposed last line in terminal
+            self._clear_line(len(self.data))
+            start = index if index > 0 else None
+            self._print_lines(from_index=start)
 
     def remove(self, item):
         """ remove override
@@ -115,18 +123,20 @@ class Lines(UserList):
     def clear(self):
         """ clear override
         """
-        length = len(self.data)
-        self.data.clear()
-        if self._isatty:
-            for index in range(0, length):
-                self._clear_line(index)
+        with self._lock:
+            length = len(self.data)
+            self.data.clear()
+            if self._isatty:
+                for index in range(0, length):
+                    self._clear_line(index)
 
     def _clear_line(self, index):
         """ clear line at index
         """
         if self._isatty:
-            move_char = self._get_move_char(index)
-            print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
+            with self._lock:
+                move_char = self._get_move_char(index)
+                print(f'{move_char}{CLEAR_EOL}', end='', file=sys.stderr)
 
     def _print_line(self, index, force=False):
         """ move to index and print item at index
@@ -159,32 +169,33 @@ class Lines(UserList):
         """ print x axis when set (supports single string or list of strings)
         """
         if (self._isatty or force) and self._show_x_axis:
-            if isinstance(self._x_axis, list):
-                x_axis_lines = self._x_axis
-            elif self._x_axis:
-                x_axis_lines = [self._x_axis]
-            else:
-                x_axis_lines = [
-                    ''.join(
-                        str(round(i / 10))[-1] if i % 10 == 0 else '.'
-                        for i in range(self._max_chars)
-                    )
-                ]
-
-            # add padding for y axis labels the + 2 is for ': '
-            spaces = (
-                ' ' * (self._y_axis_labels_max_len + 2)
-                if self._show_index else ''
-            )
-
-            for x_axis in x_axis_lines:
-                if self._use_color:
-                    print(
-                        f"{spaces}{BRIGHT_YELLOW}{x_axis}{Style.RESET_ALL}",
-                        file=sys.stderr
-                    )
+            with self._lock:
+                if isinstance(self._x_axis, list):
+                    x_axis_lines = self._x_axis
+                elif self._x_axis:
+                    x_axis_lines = [self._x_axis]
                 else:
-                    print(f"{spaces}{x_axis}", file=sys.stderr)
+                    x_axis_lines = [
+                        ''.join(
+                            str(round(i / 10))[-1] if i % 10 == 0 else '.'
+                            for i in range(self._max_chars)
+                        )
+                    ]
+
+                # add padding for y axis labels the + 2 is for ': '
+                spaces = (
+                    ' ' * (self._y_axis_labels_max_len + 2)
+                    if self._show_index else ''
+                )
+
+                for x_axis in x_axis_lines:
+                    if self._use_color:
+                        print(
+                            f"{spaces}{BRIGHT_YELLOW}{x_axis}{Style.RESET_ALL}",
+                            file=sys.stderr
+                        )
+                    else:
+                        print(f"{spaces}{x_axis}", file=sys.stderr)
 
     def _print_lines(self, force=False, from_index=None):
         """ print all items
@@ -193,8 +204,9 @@ class Lines(UserList):
             from_index = 0
         logger.debug('printing all items starting at index %s', from_index)
         if (self._isatty or force):
-            for index, _ in enumerate(self.data[from_index:], from_index):
-                self._print_line(index, force=force)
+            with self._lock:
+                for index, _ in enumerate(self.data[from_index:], from_index):
+                    self._print_line(index, force=force)
 
     def _get_move_char(self, index):
         """ return char to move to index
@@ -287,11 +299,12 @@ class Lines(UserList):
                 the index of line_id within lookup
                 extracting line_id contained within item
         """
-        index, message = self._get_index_message(item, line_id=line_id)
-        if index is not None:
-            if self[index] != message:
-                # no need to set value at index if it is already set
-                self[index] = message
+        with self._lock:
+            index, message = self._get_index_message(item, line_id=line_id)
+            if index is not None:
+                if self[index] != message:
+                    # no need to set value at index if it is already set
+                    self[index] = message
 
     @staticmethod
     def _get_data(data, size, lookup):
