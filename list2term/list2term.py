@@ -25,6 +25,9 @@ class Lines(UserList):
         """ constructor
         """
         logger.debug('executing Lines constructor')
+        # Re-entrant because public methods may call helpers that also lock.
+        # This lets us lock "whole operations" (mutate data + print) safely.
+        self._lock = threading.RLock()
         self._isatty = sys.stderr.isatty()
         if not self._isatty:
             print(
@@ -56,9 +59,6 @@ class Lines(UserList):
         )
         self._x_axis = x_axis
         colorama_init()
-        # Re-entrant because public methods may call helpers that also lock.
-        # This lets us lock "whole operations" (mutate data + print) safely.
-        self._lock = threading.RLock()
 
     def __enter__(self):
         """ on entry hide cursor if stderr is attached to tty
