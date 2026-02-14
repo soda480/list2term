@@ -31,7 +31,7 @@ dev = [
     "radon",
     "bandit",
     "coverage",
-    "coverage-badge",
+    "genbadge[coverage]",
     "twine"
 ]
 
