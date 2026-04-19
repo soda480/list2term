@@ -63,9 +63,9 @@ coverage: venv
 	@printf "$(YELLOW)Running test code coverage report...$(RESET)\n"
 	$(PY) -m coverage run -m unittest discover tests/
 	$(PY) -m coverage report -m
-	mkdir -p badges
+	mkdir -p docs/badges
 	$(PY) -m coverage xml -o coverage.xml
-	$(BIN)/genbadge coverage -i coverage.xml -o badges/coverage.svg
+	$(BIN)/genbadge coverage -i coverage.xml -o docs/badges/coverage.svg
 
 cc: venv
 	@printf "$(YELLOW)Determining cyclomatic complecity...$(RESET)\n"
