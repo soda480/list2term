@@ -4,6 +4,8 @@ from mock import call
 from mock import Mock
 from list2term import Lines
 from list2term.list2term import MAX_CHARS
+from colorama import Fore
+from colorama import Style
 
 
 class TestLines(unittest.TestCase):
@@ -315,3 +317,22 @@ class TestLines(unittest.TestCase):
         index, message = lines._get_index_message('  el presente (unplugged)  ', line_id='julieta venegas')
         self.assertIsNone(index)
         self.assertEqual(message, '  el presente (unplugged)  ')
+
+    @patch('list2term.Lines._validate_data')
+    def test__sanitize_Should_TruncateAnsiString_ByVisibleLength(self, *patches):
+        lines = Lines(size=3)
+
+        plain_text = 'A' * (MAX_CHARS + 10)
+        colored_text = f'{Fore.CYAN}{plain_text}{Style.RESET_ALL}'
+
+        result = lines._sanitize(colored_text)
+
+        expected_prefix = f'{Fore.CYAN}'
+        expected_suffix = f'{Style.RESET_ALL}...'
+
+        self.assertTrue(result.startswith(expected_prefix))
+        self.assertTrue(result.endswith(expected_suffix))
+
+        visible_result = Lines._strip_ansi(result)
+        self.assertEqual(len(visible_result), MAX_CHARS)
+        self.assertEqual(visible_result, ('A' * (MAX_CHARS - 3)) + '...')

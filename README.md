@@ -1,5 +1,5 @@
 [![ci](https://github.com/soda480/list2term/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/soda480/list2term/actions/workflows/ci.yml)
-![Coverage](https://raw.githubusercontent.com/soda480/list2term/main/badges/coverage.svg)
+![Coverage](https://raw.githubusercontent.com/soda480/list2term/main/docs/badges/coverage.svg)
 [![PyPI version](https://badge.fury.io/py/list2term.svg?icon=si%3Apython)](https://badge.fury.io/py/list2term)
 
 # list2term
@@ -79,7 +79,7 @@ Your worker functions must accept a logging object (e.g. `LinesQueue`) and use l
 
 ## Examples
 
-### Display list - [example1](https://github.com/soda480/list2term/blob/main/examples/example1.py)
+### Display list - [example1](https://github.com/soda480/list2term/blob/main/docs/examples/example1.py)
 
 Start with a list of 15 items containing random sentences, then update sentences at random indexes. As items in the list are updated the respective line in the terminal is updated to show the current contents of the list.
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
 ![example1](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example1.gif)
 
-### Display list of dynamic size - [example2](https://github.com/soda480/list2term/blob/main/examples/example2.py)
+### Display list of dynamic size - [example2](https://github.com/soda480/list2term/blob/main/docs/examples/example2.py)
 
 Start with a list of 10 items containing random sentences, then add sentences to the list, update existing sentences or remove items from the list at random indexes. As items in the list are added, updated, and removed the respective line in the terminal is updated to show the current contents of the list.
 
@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
 ![example2](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example2.gif)
 
-### Display messages from `asyncio` processes - [example3](https://github.com/soda480/list2term/blob/main/examples/example3.py)
+### Display messages from `asyncio` processes - [example3](https://github.com/soda480/list2term/blob/main/docs/examples/example3.py)
 
 This example demonstrates how `list2term` can be used to display messages from asyncio processes to the terminal. Each item of the list represents a asnycio process.
 
@@ -198,7 +198,7 @@ if __name__ == '__main__':
 ![example3](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example3.gif)
 
 
-### Display messages from multiprocessing pool processes - [example4](https://github.com/soda480/list2term/blob/main/examples/example4.py)
+### Display messages from multiprocessing pool processes - [example4](https://github.com/soda480/list2term/blob/main/docs/examples/example4.py)
 
 This example demonstrates how `list2term` can be used to display messages from processes executing in a [multiprocessing Pool](https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers). Each item of the list represents a background process. The `list2term.multiprocessing` module contains a `pool_map` method that fully abstracts the required multiprocessing constructs, you simply pass it the function to execute, an iterable of arguments to pass each process, and an optional instance of `Lines`. The method will execute the functions asynchronously, update the terminal lines accordingly and return a multiprocessing.pool.AsyncResult object. Each line in the terminal represents a background worker process.
 
@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
 ![example4](https://raw.githubusercontent.com/soda480/list2term/main/docs/images/example4.gif)
 
-### Displaying messages from threads - [example5](https://github.com/soda480/list2term/blob/main/examples/example5.py)
+### Displaying messages from threads - [example5](https://github.com/soda480/list2term/blob/main/docs/examples/example5.py)
 
 <details><summary>Code</summary>
 
