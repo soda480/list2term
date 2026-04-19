@@ -16,6 +16,7 @@ MAX_CHARS = 150
 CLEAR_EOL = '\033[K'
 BRIGHT_YELLOW = Style.BRIGHT + Fore.YELLOW
 LINE_RE = re.compile(r'^(?P<line_id>.*)->(?P<message>.*)$')
+ANSI_RE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
 
 
 class Lines(UserList):
@@ -267,9 +268,12 @@ class Lines(UserList):
         # keep first line only
         s = s.split('\n', 1)[0]
 
-        # truncate (raw length; if you later re-add ANSI-aware truncation, swap here)
-        if len(s) > self._max_chars:
-            s = f'{s[:self._max_chars - 3]}...'
+        if self._visible_len(s) > self._max_chars:
+            truncated = self._truncate_ansi(s, self._max_chars - 3)
+            if ANSI_RE.search(truncated):
+                s = truncated + Style.RESET_ALL + '...'
+            else:
+                s = truncated + '...'
 
         return s
 
@@ -350,3 +354,36 @@ class Lines(UserList):
         if not items:
             return 0
         return max(len(i) for i in items)
+
+    @staticmethod
+    def _strip_ansi(value):
+        return ANSI_RE.sub('', value)
+
+    @staticmethod
+    def _visible_len(value):
+        return len(Lines._strip_ansi(value))
+
+    @staticmethod
+    def _truncate_ansi(value, max_visible_chars):
+        if max_visible_chars <= 0:
+            return ''
+
+        visible = 0
+        i = 0
+        out = []
+
+        while i < len(value):
+            match = ANSI_RE.match(value, i)
+            if match:
+                out.append(match.group(0))
+                i = match.end()
+                continue
+
+            if visible >= max_visible_chars:
+                break
+
+            out.append(value[i])
+            visible += 1
+            i += 1
+
+        return ''.join(out)

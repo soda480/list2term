@@ -92,7 +92,7 @@ publish: dist
 
 clean:
 	@printf "$(YELLOW)Cleaning up build and test artifacts...$(RESET)\n"
-	rm -rf .pytest_cache .coverage htmlcov build dist *.egg-info badges/coverage.svg
+	rm -rf .pytest_cache .coverage coverage.xml htmlcov build dist *.egg-info badges/coverage.svg
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 scrub: clean
